@@ -1,0 +1,42 @@
+[
+  {
+    "id": "wiki-flashcards",
+    "title": "Wiki Flashcards",
+    "tag": "Knowledge",
+    "blurb": "Spaced-repetition Q&A for every concept in the YouTube wiki.",
+    "url": "https://dong-xuyong.github.io/wiki-flashcards/",
+    "accent": "#7dd3fc"
+  },
+  {
+    "id": "afbraga-flashcards",
+    "title": "AF Braga",
+    "tag": "Exams",
+    "blurb": "Referee written-test flashcards and exam simulation (C5, C6, CF).",
+    "url": "https://dong-xuyong.github.io/afbraga-flashcards/",
+    "accent": "#86efac"
+  },
+  {
+    "id": "chinese-library",
+    "title": "Chinese Library",
+    "tag": "Language",
+    "blurb": "More Life vocabulary library with Anki-style study sessions.",
+    "url": "https://dong-xuyong.github.io/chinese-library/",
+    "accent": "#fbbf24"
+  },
+  {
+    "id": "gsi-study",
+    "title": "GSI Study",
+    "tag": "Course",
+    "blurb": "IS/IT mind maps for GSI exam prep — topics and IT-CMF capabilities.",
+    "url": "https://dong-xuyong.github.io/gsi-study/",
+    "accent": "#c4b5fd"
+  },
+  {
+    "id": "resume",
+    "title": "Resume",
+    "tag": "Profile",
+    "blurb": "Personal resume site.",
+    "url": "https://dong-xuyong.github.io/Resume/",
+    "accent": "#fda4af"
+  }
+]
