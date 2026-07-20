@@ -34,7 +34,8 @@
     css.id = STYLE_ID;
     css.textContent =
       "#" + ROOT_ID + "{" +
-        "position:fixed;z-index:2147483000;left:50%;bottom:max(14px,env(safe-area-inset-bottom));" +
+        "position:fixed;z-index:2147483000;left:50%;" +
+        "bottom:max(76px,calc(env(safe-area-inset-bottom) + 64px));" +
         "transform:translateX(-50%);display:flex;align-items:center;gap:4px;" +
         "padding:6px;border-radius:999px;border:1px solid rgba(255,255,255,.14);" +
         "background:rgba(12,16,22,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);" +
