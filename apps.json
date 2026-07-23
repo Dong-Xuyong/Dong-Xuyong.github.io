@@ -8,6 +8,14 @@
     "accent": "#7dd3fc"
   },
   {
+    "id": "last30days-archive",
+    "title": "last30days Archive",
+    "tag": "Research",
+    "blurb": "Browsable archive of /last30days research answers with infographic cards.",
+    "url": "https://dong-xuyong.github.io/last30days-archive/",
+    "accent": "#2dd4bf"
+  },
+  {
     "id": "afbraga-flashcards",
     "title": "AF Braga",
     "tag": "Exams",
