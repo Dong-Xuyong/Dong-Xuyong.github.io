@@ -48,6 +48,14 @@
     "accent": "#fda4af"
   },
   {
+    "id": "job-hunt",
+    "title": "Job Hunt",
+    "tag": "Career",
+    "blurb": "Public GenAI/ML shortlist board curated from career-ops.",
+    "url": "https://dong-xuyong.github.io/job-hunt/",
+    "accent": "#2dd4bf"
+  },
+  {
     "id": "streetlifting",
     "title": "Streetlifting",
     "tag": "Training",
