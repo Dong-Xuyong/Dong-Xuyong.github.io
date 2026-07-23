@@ -3,42 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a1210" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#e7eef2" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#10181c" />
+  <meta name="color-scheme" content="light dark" />
   <meta name="description" content="Hub for Dong's web apps — flashcards, study tools, and more." />
   <title>Dong Apps</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Sora:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
 </head>
 <body>
   <div class="shell">
-    <header class="brand-row">
-      <a class="brand" href="./" aria-label="Dong Apps home">
-        <div class="brand-mark">Dong<span>.</span></div>
-        <div class="brand-sub">Apps</div>
-      </a>
-      <p class="hint">Use <kbd>←</kbd> <kbd>→</kbd> to move, <kbd>Enter</kbd> to open</p>
+    <header class="hero">
+      <p class="eyebrow">Apps</p>
+      <h1 class="brand">
+        <a href="./" aria-label="Dong Apps home">Dong<span>.</span></a>
+      </h1>
+      <p class="lede">Open any site. Browser back returns here.</p>
     </header>
 
-    <section class="hero">
-      <h1>All your sites in one place.</h1>
-      <p>Jump into any app, then use browser back to return here and keep moving.</p>
-    </section>
-
-    <div class="toolbar">
-      <button type="button" class="nav-btn" id="btn-prev" aria-label="Previous app">← Prev</button>
-      <button type="button" class="nav-btn" id="btn-next" aria-label="Next app">Next →</button>
-      <button type="button" class="nav-btn open-btn" id="btn-open">Open app</button>
-      <span class="counter" id="counter" aria-live="polite"></span>
-    </div>
-
-    <div class="grid" id="app-grid" role="listbox" aria-label="Apps"></div>
+    <nav class="apps" id="app-list" aria-label="Apps"></nav>
 
     <p class="footer">
-      Hosted on GitHub Pages ·
       <a href="https://github.com/Dong-Xuyong">@Dong-Xuyong</a>
+      <span aria-hidden="true">·</span>
+      GitHub Pages
     </p>
   </div>
   <script src="app.js"></script>

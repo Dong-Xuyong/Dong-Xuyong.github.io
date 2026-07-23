@@ -13,10 +13,12 @@ Personal launcher for all public web apps.
 | Chinese Library | https://dong-xuyong.github.io/chinese-library/ |
 | GSI Study | https://dong-xuyong.github.io/gsi-study/ |
 | Resume | https://dong-xuyong.github.io/Resume/ |
+| Streetlifting | https://dong-xuyong.github.io/streetlifting/ |
 
 ## Navigation
 
-- On the hub: **Prev / Next**, arrow keys, then **Open** (or Enter / double-click).
+- Click any app to open it.
+- Arrow keys move focus; Enter opens the focused app.
 - Browser **Back** returns to the hub after opening an app.
 
 ## Source

@@ -3,11 +3,7 @@
 
   var apps = [];
   var active = 0;
-  var grid = document.getElementById("app-grid");
-  var counter = document.getElementById("counter");
-  var btnPrev = document.getElementById("btn-prev");
-  var btnNext = document.getElementById("btn-next");
-  var btnOpen = document.getElementById("btn-open");
+  var list = document.getElementById("app-list");
 
   function clampIndex(i) {
     if (!apps.length) return 0;
@@ -17,23 +13,17 @@
   function setActive(i, opts) {
     opts = opts || {};
     active = clampIndex(i);
-    var cards = grid.querySelectorAll(".app-card");
-    cards.forEach(function (card, idx) {
+    var items = list.querySelectorAll(".app");
+    items.forEach(function (item, idx) {
       var on = idx === active;
-      card.classList.toggle("is-active", on);
-      card.setAttribute("aria-selected", on ? "true" : "false");
-      card.tabIndex = on ? 0 : -1;
+      item.classList.toggle("is-active", on);
+      if (on) item.setAttribute("aria-current", "true");
+      else item.removeAttribute("aria-current");
+      item.tabIndex = on ? 0 : -1;
     });
-    if (apps.length) {
-      counter.textContent = active + 1 + " / " + apps.length;
-      btnOpen.textContent = "Open " + apps[active].title;
-      if (opts.focus && cards[active]) cards[active].focus({ preventScroll: true });
-      if (opts.scroll && cards[active]) {
-        cards[active].scrollIntoView({ block: "nearest", behavior: "smooth" });
-      }
-    } else {
-      counter.textContent = "";
-      btnOpen.textContent = "Open app";
+    if (opts.focus && items[active]) items[active].focus({ preventScroll: true });
+    if (opts.scroll && items[active]) {
+      items[active].scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }
 
@@ -43,31 +33,30 @@
   }
 
   function render() {
-    grid.innerHTML = "";
+    list.innerHTML = "";
     apps.forEach(function (app, idx) {
-      var card = document.createElement("button");
-      card.type = "button";
-      card.className = "app-card";
-      card.setAttribute("role", "option");
-      card.style.setProperty("--card-accent", app.accent || "#d6ff4a");
-      card.innerHTML =
+      var item = document.createElement("a");
+      item.className = "app";
+      item.href = app.url;
+      item.style.setProperty("--card-accent", app.accent || "var(--accent)");
+      item.innerHTML =
         '<span class="app-index">' + String(idx + 1).padStart(2, "0") + "</span>" +
         '<div class="app-copy">' +
           "<h2>" + escapeHtml(app.title) + "</h2>" +
           "<p>" + escapeHtml(app.blurb) + "</p>" +
         "</div>" +
-        '<span class="app-tag">' + escapeHtml(app.tag || "App") + "</span>" +
-        '<span class="app-go">Press Enter to open →</span>';
+        '<span class="app-meta">' +
+          "<span>" + escapeHtml(app.tag || "App") + "</span>" +
+          '<span class="app-arrow" aria-hidden="true">→</span>' +
+        "</span>";
 
-      card.addEventListener("click", function () {
-        if (active === idx) {
-          openActive();
-          return;
-        }
-        setActive(idx, { focus: true });
+      item.addEventListener("focus", function () {
+        setActive(idx);
       });
-      card.addEventListener("dblclick", openActive);
-      grid.appendChild(card);
+      item.addEventListener("mouseenter", function () {
+        setActive(idx);
+      });
+      list.appendChild(item);
     });
     setActive(active);
   }
@@ -80,14 +69,6 @@
       .replace(/"/g, "&quot;");
   }
 
-  btnPrev.addEventListener("click", function () {
-    setActive(active - 1, { focus: true, scroll: true });
-  });
-  btnNext.addEventListener("click", function () {
-    setActive(active + 1, { focus: true, scroll: true });
-  });
-  btnOpen.addEventListener("click", openActive);
-
   document.addEventListener("keydown", function (e) {
     if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
     if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
@@ -96,13 +77,12 @@
     } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
       e.preventDefault();
       setActive(active + 1, { focus: true, scroll: true });
-    } else if (e.key === "Enter") {
+    } else if (e.key === "Enter" && document.activeElement === document.body) {
       e.preventDefault();
       openActive();
     }
   });
 
-  // Restore last selection when returning via browser Back
   try {
     var saved = sessionStorage.getItem("dx-apps-active");
     if (saved != null) active = parseInt(saved, 10) || 0;
@@ -125,7 +105,9 @@
       render();
     })
     .catch(function (err) {
-      grid.innerHTML =
-        '<p class="footer">Could not load apps list. ' + escapeHtml(err.message || String(err)) + "</p>";
+      list.innerHTML =
+        '<p class="error">Could not load apps. ' +
+        escapeHtml(err.message || String(err)) +
+        "</p>";
     });
 })();
