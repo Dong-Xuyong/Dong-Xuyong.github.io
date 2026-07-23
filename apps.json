@@ -38,5 +38,13 @@
     "blurb": "Personal resume site.",
     "url": "https://dong-xuyong.github.io/Resume/",
     "accent": "#fda4af"
+  },
+  {
+    "id": "streetlifting",
+    "title": "Streetlifting",
+    "tag": "Training",
+    "blurb": "Program builder, workout log, and progression analytics for streetlifting.",
+    "url": "https://dong-xuyong.github.io/streetlifting/",
+    "accent": "#77b7ff"
   }
 ]
