@@ -100,8 +100,11 @@ body::before {
   line-height: 0.92;
 }
 
-.brand a {
-  color: inherit;
+.brand a,
+.brand a:visited,
+.brand a:hover,
+.brand a:active {
+  color: var(--ink);
   text-decoration: none;
 }
 
@@ -125,7 +128,10 @@ body::before {
   animation: rise 0.8s var(--ease) 0.12s both;
 }
 
-.app {
+.app,
+.app:visited,
+.app:hover,
+.app:active {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 12px 16px;
@@ -135,7 +141,7 @@ body::before {
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
-  color: inherit;
+  color: var(--ink);
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -168,11 +174,13 @@ body::before {
 
 .app-copy h2 {
   margin: 0 0 4px;
+  color: var(--ink);
   font-family: var(--font-display);
   font-size: clamp(1.15rem, 3vw, 1.4rem);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.15;
+  text-decoration: none;
 }
 
 .app-copy p {
@@ -180,6 +188,7 @@ body::before {
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.45;
+  text-decoration: none;
 }
 
 .app-meta {
@@ -218,7 +227,8 @@ body::before {
   animation: rise 0.8s var(--ease) 0.18s both;
 }
 
-.footer a {
+.footer a,
+.footer a:visited {
   color: var(--ink);
   text-decoration: none;
   border-bottom: 1px solid transparent;

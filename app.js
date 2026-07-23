@@ -94,20 +94,31 @@
     } catch (e) {}
   });
 
-  fetch("apps.json", { cache: "no-cache" })
-    .then(function (r) {
-      if (!r.ok) throw new Error("Failed to load apps.json");
-      return r.json();
-    })
-    .then(function (data) {
-      apps = Array.isArray(data) ? data : [];
-      if (active >= apps.length) active = 0;
-      render();
-    })
-    .catch(function (err) {
-      list.innerHTML =
-        '<p class="error">Could not load apps. ' +
-        escapeHtml(err.message || String(err)) +
-        "</p>";
-    });
+  function loadApps(attempt) {
+    attempt = attempt || 1;
+    fetch("apps.json", { cache: "no-cache" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("Failed to load apps.json");
+        return r.json();
+      })
+      .then(function (data) {
+        apps = Array.isArray(data) ? data : [];
+        if (active >= apps.length) active = 0;
+        render();
+      })
+      .catch(function (err) {
+        if (attempt < 3) {
+          setTimeout(function () {
+            loadApps(attempt + 1);
+          }, 350 * attempt);
+          return;
+        }
+        list.innerHTML =
+          '<p class="error">Could not load apps. ' +
+          escapeHtml(err.message || String(err)) +
+          "</p>";
+      });
+  }
+
+  loadApps();
 })();
