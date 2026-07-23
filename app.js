@@ -39,6 +39,7 @@
       item.className = "app";
       item.href = app.url;
       item.style.setProperty("--card-accent", app.accent || "var(--accent)");
+      item.style.setProperty("--app-accent", app.accent || "var(--accent)");
       item.innerHTML =
         '<span class="app-index">' + String(idx + 1).padStart(2, "0") + "</span>" +
         '<div class="app-copy">' +
