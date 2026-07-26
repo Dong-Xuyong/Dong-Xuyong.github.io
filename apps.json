@@ -8,6 +8,14 @@
     "accent": "#7dd3fc"
   },
   {
+    "id": "speaking-analysis",
+    "title": "Speaking Analysis",
+    "tag": "Practice",
+    "blurb": "YouTube speaking samples scored against the wiki public-speaking OS.",
+    "url": "https://dong-xuyong.github.io/speaking-analysis/",
+    "accent": "#5eead4"
+  },
+  {
     "id": "last30days-archive",
     "title": "last30days Archive",
     "tag": "Research",
