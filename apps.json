@@ -8,6 +8,14 @@
     "accent": "#ffd9b3"
   },
   {
+    "id": "wiki-library",
+    "title": "Wiki Library",
+    "tag": "Books",
+    "blurb": "Kindle-like shelf for YouTube audiobooks and book-style talks — chapters, progress, insights links.",
+    "url": "https://dong-xuyong.github.io/wiki-library/",
+    "accent": "#3d6b5a"
+  },
+  {
     "id": "wiki-flashcards",
     "title": "Wiki Flashcards",
     "tag": "Knowledge",
