@@ -14,6 +14,7 @@ Personal launcher for all public web apps.
 | GSI Study | https://dong-xuyong.github.io/gsi-study/ |
 | Resume | https://dong-xuyong.github.io/Resume/ |
 | Streetlifting | https://dong-xuyong.github.io/streetlifting/ |
+| Summer Outfits 2026 | https://dong-xuyong.github.io/summer-outfits-2026/ |
 
 ## Navigation
 

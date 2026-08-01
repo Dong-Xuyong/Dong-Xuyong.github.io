@@ -1,5 +1,13 @@
 [
   {
+    "id": "wiki-insights",
+    "title": "Wiki Insights",
+    "tag": "Knowledge",
+    "blurb": "Navigate YouTube wiki videos with emoji Insights Q&A and Summary.",
+    "url": "https://dong-xuyong.github.io/wiki-insights/",
+    "accent": "#ffd9b3"
+  },
+  {
     "id": "wiki-flashcards",
     "title": "Wiki Flashcards",
     "tag": "Knowledge",
@@ -70,5 +78,13 @@
     "blurb": "Program builder, workout log, and progression analytics for streetlifting.",
     "url": "https://dong-xuyong.github.io/streetlifting/",
     "accent": "#77b7ff"
+  },
+  {
+    "id": "summer-outfits-2026",
+    "title": "Summer Outfits 2026",
+    "tag": "Style",
+    "blurb": "Men's summer capsule builder — occasion search, Top/Bottom/Shoes combos, shop links.",
+    "url": "https://dong-xuyong.github.io/summer-outfits-2026/",
+    "accent": "#3dbaad"
   }
 ]
