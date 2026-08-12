@@ -11,7 +11,6 @@ Personal launcher for all public web apps.
 | Wiki Flashcards | https://dong-xuyong.github.io/wiki-flashcards/ |
 | AF Braga | https://dong-xuyong.github.io/afbraga-flashcards/ |
 | Chinese Library | https://dong-xuyong.github.io/chinese-library/ |
-| GSI Study | https://dong-xuyong.github.io/gsi-study/ |
 | Resume | https://dong-xuyong.github.io/Resume/ |
 | Streetlifting | https://dong-xuyong.github.io/streetlifting/ |
 | Summer Outfits 2026 | https://dong-xuyong.github.io/summer-outfits-2026/ |

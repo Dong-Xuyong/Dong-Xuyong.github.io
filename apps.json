@@ -48,16 +48,7 @@
     "accent": "#fbbf24"
   },
   {
-    "id": "gsi-study",
-    "title": "GSI Study",
-    "tag": "Course",
-    "blurb": "IS/IT mind maps for GSI exam prep — topics and IT-CMF capabilities.",
-    "url": "https://dong-xuyong.github.io/gsi-study/",
-    "accent": "#c4b5fd"
-  },
-  {
-    "id": "resume",
-    "title": "Resume",
+    "id": "resume",    "title": "Resume",
     "tag": "Profile",
     "blurb": "Personal resume site.",
     "url": "https://dong-xuyong.github.io/Resume/",
