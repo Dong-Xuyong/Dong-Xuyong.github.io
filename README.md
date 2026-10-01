@@ -4,23 +4,6 @@ Personal launcher for all public web apps.
 
 **Live:** https://dong-xuyong.github.io/
 
-## Apps
-
-| App | URL |
-|-----|-----|
-| Wiki Flashcards | https://dong-xuyong.github.io/wiki-flashcards/ |
-| AF Braga | https://dong-xuyong.github.io/afbraga-flashcards/ |
-| Chinese Library | https://dong-xuyong.github.io/chinese-library/ |
-| Resume | https://dong-xuyong.github.io/Resume/ |
-| Streetlifting | https://dong-xuyong.github.io/streetlifting/ |
-| Summer Outfits 2026 | https://dong-xuyong.github.io/summer-outfits-2026/ |
-
-## Navigation
-
-- Click any app to open it.
-- Arrow keys move focus; Enter opens the focused app.
-- Browser **Back** returns to the hub after opening an app.
-
 ## Source
 
 Maintained in the Second Brain repo under `apps-hub/`, deployed to
@@ -32,5 +15,4 @@ python scripts/sync_apps_hub.py
 
 ## Add an app
 
-1. Append an entry to `apps.json`.
-2. Run the sync script (or push this folder to the user Pages repo).
+Add a link to `index.html`: under `nav.main` for daily apps, under `nav.more` for rarely used ones. Then run the sync script.
