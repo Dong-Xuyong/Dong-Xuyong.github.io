@@ -15,4 +15,4 @@ python scripts/sync_apps_hub.py
 
 ## Add an app
 
-Add a link to `index.html`: under `nav.main` for daily apps, under `nav.more` for rarely used ones. Then run the sync script.
+Add a row under the collapsed More list in `index.html`. Journal stays the only large card. Deadline rows live in the `MISSIONS` array in `hub.js`. Then run the sync script.

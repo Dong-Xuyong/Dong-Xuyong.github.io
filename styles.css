@@ -1,7 +1,7 @@
 main {
-  width: min(440px, calc(100% - 48px));
+  width: min(440px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 12vh 0 64px;
+  padding: calc(56px + env(safe-area-inset-top)) 0 calc(40px + env(safe-area-inset-bottom));
 }
 
 a {
@@ -9,61 +9,207 @@ a {
   text-decoration: none;
 }
 
-.main {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 28px 20px;
+h1,
+h2,
+p {
+  margin: 0;
 }
 
-.main a {
+.today-head {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  padding-right: 3.25rem;
+}
+
+.today-head h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.today-head p,
+.sync-hint,
+.all-done {
+  color: var(--muted-text);
+  font-size: 0.84rem;
+}
+
+.sync-hint {
+  margin-top: 10px;
+}
+
+.sync-hint a {
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+.all-done {
+  margin-top: 12px;
+}
+
+.today-list,
+.mission-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.today-link,
+.mission-list li {
+  display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 1.05rem;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.85);
+}
+
+.today-link:active {
+  transform: scale(0.99);
+}
+
+.row-label {
+  font-size: 0.98rem;
   font-weight: 600;
   letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.badge {
+  flex: none;
+  min-width: 2.6rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  font-size: 0.72rem;
+  font-weight: 600;
   text-align: center;
+  letter-spacing: 0.01em;
 }
 
-.main img {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 24%;
-  box-shadow: 0 8px 24px hsl(0 0% 0% / 0.18);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.badge-soon {
+  background: hsl(var(--destructive) / 0.12);
+  color: hsl(var(--destructive));
 }
 
-.main a:hover img,
-.main a:focus-visible img {
-  transform: translateY(-4px) scale(1.03);
-  box-shadow: 0 14px 32px hsl(0 0% 0% / 0.26);
-}
-
-.main a:focus-visible {
-  outline: none;
-}
-
-.main a:focus-visible img {
+.today-link:focus-visible,
+.feature:focus-visible,
+.more a:focus-visible,
+.more summary:focus-visible,
+.sync-hint a:focus-visible {
   outline: 2px solid hsl(var(--primary));
   outline-offset: 3px;
 }
 
-.more {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 16px;
-  margin-top: 56px;
-  font-size: 0.82rem;
-  opacity: 0.55;
+.missions {
+  margin-top: 22px;
 }
 
-.more a {
+.missions h2,
+.more summary {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--muted-text);
 }
 
-.more a:hover,
-.more a:focus-visible {
-  color: var(--ink);
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 14px;
+  border-radius: 22px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.7);
+  box-shadow: 0 8px 24px hsl(0 0% 0% / 0.08);
+}
+
+.feature img {
+  width: 88px;
+  height: 88px;
+  flex: none;
+  border-radius: 24%;
+  box-shadow: 0 8px 24px hsl(0 0% 0% / 0.18);
+}
+
+.feature strong {
+  font-size: 1.28rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.feature:active {
+  transform: scale(0.99);
+}
+
+.more {
+  margin-top: 28px;
+}
+
+.more summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.more summary::-webkit-details-marker {
+  display: none;
+}
+
+.more summary::after {
+  content: "›";
+  font-size: 1.2rem;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1;
+}
+
+.more[open] summary::after {
+  content: "˅";
+}
+
+.more nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.more a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 2px;
+  border-top: 1px solid hsl(var(--border) / 0.75);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.more a::after {
+  content: "›";
+  margin-left: auto;
+  color: var(--muted-text);
+  font-weight: 400;
+}
+
+@media (max-width: 380px) {
+  .feature img {
+    width: 72px;
+    height: 72px;
+  }
+
+  .feature strong {
+    font-size: 1.12rem;
+  }
 }

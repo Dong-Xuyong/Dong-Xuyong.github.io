@@ -7,31 +7,52 @@
   <title>Dong Apps</title>
   <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dong-ui/theme.css?v=5" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
   <script src="dong-ui/theme.js"></script>
 </head>
 <body>
   <button type="button" data-dong-theme-toggle aria-label="Toggle color theme"></button>
   <main>
-    <nav class="main" aria-label="Apps">
-      <a href="/wiki-insights/"><img src="icons/wiki-insights.jpg" alt="" />YouTube Wiki Insights</a>
-      <a href="/wiki-flashcards/"><img src="icons/wiki-flashcards.jpg" alt="" />Wiki Review Cards</a>
-      <a href="/chinese-library/"><img src="icons/chinese-library.jpg" alt="" />Mandarin Vocabulary</a>
-      <a href="/streetlifting/"><img src="icons/streetlifting.jpg" alt="" />Streetlifting Log</a>
-      <a href="/journal/"><img src="icons/journal.jpg" alt="" />Journal &amp; Reviews</a>
-      <a href="/nutrition/"><img src="icons/nutrition.jpg" alt="" />Nutrition Tracker</a>
-      <a href="/crew-log/"><img src="icons/crew-log.jpg" alt="" />Crew Log</a>
-    </nav>
-    <nav class="more" aria-label="More apps">
-      <a href="/mirror/">Morning Brief</a>
-      <a href="/speaking-analysis/">Speaking Coach Analysis</a>
-      <a href="/last30days-archive/">Research Archive (last30days)</a>
-      <a href="/afbraga-flashcards/">AF Braga Referee Study</a>
-      <a href="/Resume/">Resume</a>
-      <a href="/job-hunt/">GenAI Job Shortlist</a>
-      <a href="/summer-outfits-2026/">Outfit Builder</a>
-    </nav>
+    <section class="today" aria-labelledby="today-title">
+      <div class="today-head">
+        <h1 id="today-title">Today</h1>
+        <p id="today-date"></p>
+      </div>
+      <div id="today-body" aria-live="polite"></div>
+    </section>
+
+    <section id="missions" class="missions" hidden></section>
+
+    <a class="feature" href="/journal/">
+      <img src="icons/journal.jpg" alt="" />
+      <strong>Journal &amp; Reviews</strong>
+    </a>
+
+    <details class="more">
+      <summary>More</summary>
+      <nav aria-label="More apps">
+        <a href="/wiki-insights/">YouTube Wiki Insights</a>
+        <a href="/wiki-flashcards/">Wiki Review Cards</a>
+        <a href="/chinese-library/">Mandarin Vocabulary</a>
+        <a href="/streetlifting/">Streetlifting Log</a>
+        <a href="/nutrition/">Nutrition Tracker</a>
+        <a href="/crew-log/">Crew Log</a>
+        <a href="/mirror/">Morning Brief</a>
+        <a href="/speaking-analysis/">Speaking Coach Analysis</a>
+        <a href="/last30days-archive/">Research Archive (last30days)</a>
+        <a href="/afbraga-flashcards/">AF Braga Referee Study</a>
+        <a href="/Resume/">Resume</a>
+        <a href="/job-hunt/">GenAI Job Shortlist</a>
+        <a href="/summer-outfits-2026/">Outfit Builder</a>
+        <a href="/piano/">Piano Practice</a>
+        <a href="/wiki-library/">Wiki Bookshelf</a>
+        <a href="/law-wiki/">Legal Research Wiki</a>
+        <a href="/gsi-study/">GSI Exam Mind Maps</a>
+      </nav>
+    </details>
   </main>
+  <script src="dong-ui/gh-sync.js?v=1"></script>
+  <script src="hub.js?v=1"></script>
 </body>
 </html>
