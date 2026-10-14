@@ -249,21 +249,60 @@
     return saw ? count : null;
   }
 
-  function speakingStatus(raw, today) {
+  function dayStamp(value) {
+    if (typeof value !== "string") return "";
+    var day = value.trim().slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : "";
+  }
+
+  function finiteNumber(value) {
+    if (typeof value === "number" && isFinite(value)) return value;
+    if (typeof value === "string" && value.trim() !== "" && isFinite(+value)) return +value;
+    return null;
+  }
+
+  // Speaking Coach stores the daily 2-minute check-in only in localStorage.
+  // Missing, unreadable, or a checkins list without today means not done.
+  function speakingDone(raw, today) {
     var parsed;
     var checkins;
-    if (raw == null) return { skip: true };
+    var i;
+    if (raw == null || raw === "") return false;
     try {
       parsed = JSON.parse(raw);
     } catch (e) {
-      return { skip: true };
+      return false;
     }
-    if (!isRecord(parsed)) return { skip: true };
+    if (!isRecord(parsed)) return false;
     checkins = Array.isArray(parsed.checkins) ? parsed.checkins : [];
-    return {
-      skip: false,
-      done: checkins.indexOf(today) !== -1,
-    };
+    for (i = 0; i < checkins.length; i++) {
+      if (dayStamp(checkins[i]) === today) return true;
+    }
+    return false;
+  }
+
+  // piano.json sessions are keyed by YYYY-MM-DD. A day is logged when minutes > 0.
+  function pianoLogged(file, today) {
+    var sessions;
+    var session;
+    var i;
+    var minutes;
+    if (!isRecord(file)) return false;
+    sessions = file.sessions;
+    session = null;
+    if (Array.isArray(sessions)) {
+      for (i = 0; i < sessions.length; i++) {
+        if (isRecord(sessions[i]) && dayStamp(sessions[i].date) === today) session = sessions[i];
+      }
+    } else if (isRecord(sessions)) {
+      session = sessions[today];
+    } else {
+      return false;
+    }
+    if (typeof session === "number") return session > 0;
+    if (!isRecord(session)) return false;
+    minutes = finiteNumber(session.minutes);
+    return minutes != null && minutes > 0;
   }
 
   function item(id, badge, label, href) {
@@ -274,7 +313,8 @@
    * sources.journal / nutrition / streetlifting / wiki / chinese are parsed
    * JSON or null when the file is missing. A true *Error flag means that
    * read failed and the check must stay unknown.
-   * speakingRaw is the localStorage string, or null/undefined when absent.
+   * speakingRaw is the localStorage string, or null when the key is absent.
+   * piano is piano.json, or null when that file is missing.
    */
   function missingItems(sources, today) {
     var items = [];
@@ -282,8 +322,6 @@
     var wikiCount;
     var chineseCount;
     var left;
-    var speaking;
-
     if (sources.journalError) unknown = true;
     else {
       if (!sectionFilled(dayEntry(sources.journal, today), MORNING_FIELDS)) {
@@ -308,9 +346,13 @@
       items.push(item("training", "open", "Training not logged", "/streetlifting/"));
     }
 
-    speaking = speakingStatus(sources.speakingRaw, today);
-    if (!speaking.skip && !speaking.done) {
+    if (!speakingDone(sources.speakingRaw, today)) {
       items.push(item("speaking", "open", "Speaking practice", "/speaking-analysis/"));
+    }
+
+    if (sources.pianoError) unknown = true;
+    else if (!pianoLogged(sources.piano, today)) {
+      items.push(item("piano", "open", "Piano practice", "/piano/"));
     }
 
     if (sources.wikiError) unknown = true;
@@ -434,6 +476,7 @@
           streetError: true,
           wikiError: true,
           chineseError: true,
+          pianoError: true,
         },
         today
       );
@@ -449,6 +492,7 @@
       ["streetlifting", "streetlifting"],
       ["wiki", "wiki-flashcards"],
       ["chinese", "chinese-library"],
+      ["piano", "piano"],
     ];
 
     Promise.all(
@@ -472,6 +516,7 @@
         if (result.key === "streetlifting") sources.streetError = result.error;
         if (result.key === "wiki") sources.wikiError = result.error;
         if (result.key === "chinese") sources.chineseError = result.error;
+        if (result.key === "piano") sources.pianoError = result.error;
         if (result.error) failed.push(result.key);
       });
       var report = missingItems(sources, today);
@@ -506,7 +551,8 @@
     trainingLogged: trainingLogged,
     wikiDueCount: wikiDueCount,
     chineseDueCount: chineseDueCount,
-    speakingStatus: speakingStatus,
+    speakingDone: speakingDone,
+    pianoLogged: pianoLogged,
     habitsLeft: habitsLeft,
     boot: boot,
   };
