@@ -396,6 +396,257 @@
     return row;
   }
 
+  var CARD_GOAL = 20;
+  var TRAIN_TARGETS = { calories: 2050, protein: 150, carbs: 225, fat: 60 };
+  var REST_TARGETS = { calories: 1650, protein: 150, carbs: 130, fat: 60 };
+
+  function positiveNum(value) {
+    var n = finiteNumber(value);
+    return n != null && n > 0 ? n : 0;
+  }
+
+  function epochMs(value) {
+    var n = finiteNumber(value);
+    if (n == null) return null;
+    if (n > 0 && n < 1e12) return n * 1000;
+    return n;
+  }
+
+  function lisbonDayFromMs(value) {
+    var ms = epochMs(value);
+    if (ms == null) return "";
+    return lisbonDay(new Date(ms));
+  }
+
+  function exerciseRole(name) {
+    var n = String(name || "").toLowerCase();
+    if (/\b(walk|walking)\b/.test(n)) return "walk";
+    if (/\bmobility\b|\bstretch(?:ing)?\b/.test(n)) return "mobility";
+    if (/\bwork(?:\s|-)?shift\b|\bshift\b/.test(n) || /\bwork\b/.test(n)) return "work";
+    if (/\brun(?:ning)?\b|\bjog(?:ging)?\b/.test(n)) return "run";
+    return "other";
+  }
+
+  function durationMinutes(entry) {
+    var mins;
+    if (!isRecord(entry)) return null;
+    mins = finiteNumber(entry.durationMin);
+    if (mins != null && mins > 0) return mins;
+    mins = finiteNumber(entry.minutes);
+    if (mins != null && mins > 0) return mins;
+    return null;
+  }
+
+  function entryTrains(entry) {
+    var minutes;
+    if (!isRecord(entry)) return false;
+    if (exerciseRole(entry.name || entry.type || "") !== "run") return false;
+    minutes = durationMinutes(entry);
+    return minutes != null && minutes >= 30;
+  }
+
+  function normalizeDayType(value) {
+    var v;
+    if (typeof value !== "string") return null;
+    v = value.trim().toLowerCase();
+    if (v === "training" || v === "active" || v === "train") return "training";
+    if (v === "rest" || v === "rest-day" || v === "off") return "rest";
+    return null;
+  }
+
+  function countSets(session) {
+    var lifts;
+    var n = 0;
+    if (!isRecord(session) || !isRecord(session.lifts)) return 0;
+    lifts = session.lifts;
+    Object.keys(lifts).forEach(function (name) {
+      if (Array.isArray(lifts[name])) n += lifts[name].length;
+    });
+    return n;
+  }
+
+  function hasStreetSession(session) {
+    if (!isRecord(session)) return false;
+    if (countSets(session) > 0) return true;
+    if (positiveNum(session.liftKcal) > 0) return true;
+    return Array.isArray(session.activities) && session.activities.length > 0;
+  }
+
+  function streetSession(file, today) {
+    if (!isRecord(file) || !isRecord(file.sessions)) return null;
+    return isRecord(file.sessions[today]) ? file.sessions[today] : null;
+  }
+
+  function inferDayType(day, session) {
+    var list;
+    var activities;
+    var i;
+    var activity;
+    if (hasStreetSession(session)) return "training";
+    list = day && Array.isArray(day.exercise) ? day.exercise : [];
+    for (i = 0; i < list.length; i++) {
+      if (entryTrains(list[i])) return "training";
+    }
+    activities = session && Array.isArray(session.activities) ? session.activities : [];
+    for (i = 0; i < activities.length; i++) {
+      activity = activities[i];
+      if (!isRecord(activity)) continue;
+      if (entryTrains({
+        name: activity.type || activity.name,
+        durationMin: activity.durationMin,
+        minutes: activity.minutes,
+      })) return "training";
+    }
+    return "rest";
+  }
+
+  // NutritionCore.resolveDayType: dayType wins, else a streetlifting session
+  // or a run of 30 minutes or more. Anything else is a rest day.
+  function resolveDayType(day, session) {
+    var override = normalizeDayType(day && day.dayType);
+    if (override) return override;
+    return inferDayType(day, session);
+  }
+
+  function dayTargets(goals, type) {
+    var g = isRecord(goals) ? goals : {};
+    var rest = isRecord(g.restDay) ? g.restDay : {};
+    var base = type === "rest" ? REST_TARGETS : TRAIN_TARGETS;
+    var source = type === "rest" ? rest : g;
+    return {
+      calories: positiveNum(source.calories) || base.calories,
+      protein: positiveNum(source.protein) || base.protein,
+      carbs: positiveNum(source.carbs) || base.carbs,
+      fat: positiveNum(source.fat) || base.fat,
+    };
+  }
+
+  function nutritionDay(file, today) {
+    if (!isRecord(file) || !isRecord(file.days)) return null;
+    return isRecord(file.days[today]) ? file.days[today] : null;
+  }
+
+  function mealTotals(day) {
+    var totals = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+    var meals = day && day.meals;
+    function addItem(entry) {
+      if (!isRecord(entry)) return;
+      totals.kcal += finiteNumber(entry.kcal) || 0;
+      totals.protein += finiteNumber(entry.protein) || 0;
+      totals.carbs += finiteNumber(entry.carbs) || 0;
+      totals.fat += finiteNumber(entry.fat) || 0;
+    }
+    function addList(list) {
+      var i;
+      if (!Array.isArray(list)) return;
+      for (i = 0; i < list.length; i++) addItem(list[i]);
+    }
+    if (Array.isArray(meals)) addList(meals);
+    else if (isRecord(meals)) {
+      Object.keys(meals).forEach(function (key) {
+        addList(meals[key]);
+      });
+    }
+    return totals;
+  }
+
+  function macroBit(letter, left) {
+    var n = Math.round(left);
+    if (n <= 0) return letter + " ✓";
+    return letter + " " + n + "g";
+  }
+
+  // A missing file or a missing day counts as nothing eaten, so the row shows
+  // the full targets. Once calories and every macro are met, the row is done.
+  function foodLeftItem(nutrition, street, today) {
+    var day = nutritionDay(nutrition, today);
+    var type = resolveDayType(day, streetSession(street, today));
+    var targets = dayTargets(isRecord(nutrition) ? nutrition.goals : null, type);
+    var eaten = mealTotals(day);
+    var leftCal = targets.calories - eaten.kcal;
+    var leftP = targets.protein - eaten.protein;
+    var leftC = targets.carbs - eaten.carbs;
+    var leftF = targets.fat - eaten.fat;
+    var row;
+    if (Math.round(leftCal) <= 0 && Math.round(leftP) <= 0 && Math.round(leftC) <= 0 && Math.round(leftF) <= 0) {
+      return null;
+    }
+    row = item("food", Math.max(0, Math.round(leftCal)) + " kcal", "Food left", "/nutrition/");
+    row.detail = "Left: " + [macroBit("P", leftP), macroBit("C", leftC), macroBit("F", leftF)].join(" · ");
+    return row;
+  }
+
+  // null reviewedToday means this file has no review timestamps and no review log.
+  function cardQuota(due, reviewedToday) {
+    if (due == null) return null;
+    if (due <= 0) return 0;
+    if (reviewedToday == null) return Math.min(due, CARD_GOAL);
+    return Math.min(due, Math.max(0, CARD_GOAL - reviewedToday));
+  }
+
+  function cardTodoItem(id, name, left, href) {
+    return item(id, String(left), name + ": " + left + " to do", href);
+  }
+
+  // wiki-flashcards.json analytics.events: { t, type: "review" }.
+  // Count reviews whose timestamp falls on today in Europe/Lisbon.
+  // Without that log, count cards whose last timestamp is today.
+  // Returns null when neither is stored.
+  function wikiReviewedToday(file, today) {
+    var events = isRecord(file) && isRecord(file.analytics) ? file.analytics.events : null;
+    var count = 0;
+    var saw = false;
+    var i;
+    if (Array.isArray(events)) {
+      for (i = 0; i < events.length; i++) {
+        var ev = events[i];
+        if (!isRecord(ev) || ev.type !== "review") continue;
+        if (lisbonDayFromMs(ev.t) === today) count += 1;
+      }
+      return count;
+    }
+    if (!eachValue(file && file.cards, function (card) {
+      var last;
+      if (!isRecord(card) || !Object.prototype.hasOwnProperty.call(card, "last")) return;
+      last = epochMs(card.last);
+      if (last == null) return;
+      saw = true;
+      if (lisbonDay(new Date(last)) === today) count += 1;
+    })) return null;
+    return saw ? count : null;
+  }
+
+  // chinese-library.json journey.events: { date, type: "study", count }.
+  // Sum today's study count. The app stores one rolling event per local date.
+  // Without that log, count srs cards whose last timestamp is today in Lisbon.
+  // Returns null when neither is stored.
+  function chineseReviewedToday(file, today) {
+    var events = isRecord(file) && isRecord(file.journey) ? file.journey.events : null;
+    var count = 0;
+    var saw = false;
+    var i;
+    if (Array.isArray(events)) {
+      for (i = 0; i < events.length; i++) {
+        var ev = events[i];
+        var n;
+        if (!isRecord(ev) || ev.type !== "study") continue;
+        if (dayStamp(ev.date) !== today) continue;
+        n = finiteNumber(ev.count);
+        count += n != null && n > 0 ? n : 1;
+      }
+      return count;
+    }
+    if (!eachValue(file && file.srs, function (card) {
+      var last;
+      if (!isRecord(card) || !Object.prototype.hasOwnProperty.call(card, "last")) return;
+      last = epochMs(card.last);
+      if (last == null) return;
+      saw = true;
+      if (lisbonDay(new Date(last)) === today) count += 1;
+    })) return null;
+    return saw ? count : null;
+  }
+
   /**
    * sources.journal / nutrition / streetlifting / wiki / chinese are parsed
    * JSON or null when the file is missing. A true *Error flag means that
@@ -404,12 +655,16 @@
    * piano is piano.json, or null when that file is missing.
    * referee is referee-games.json, or null when that file is missing.
    * Next game is omitted when the file is missing or nothing is upcoming.
+   * Food left still renders from a missing nutrition file (full targets).
    */
   function missingItems(sources, today) {
     var items = [];
     var unknown = false;
-    var wikiCount;
-    var chineseCount;
+    var wikiDue;
+    var chineseDue;
+    var wikiLeft;
+    var chineseLeft;
+    var food;
     var left;
     var next;
     if (sources.journalError) unknown = true;
@@ -431,6 +686,11 @@
       items.push(item("meals", "open", "Meals not logged", "/nutrition/#" + today));
     }
 
+    if (!sources.nutritionError) {
+      food = foodLeftItem(sources.nutrition, sources.streetlifting, today);
+      if (food) items.push(food);
+    }
+
     if (sources.streetError) unknown = true;
     else if (!trainingLogged(sources.streetlifting, today)) {
       items.push(item("training", "open", "Training not logged", "/streetlifting/"));
@@ -447,17 +707,19 @@
 
     if (sources.wikiError) unknown = true;
     else {
-      wikiCount = wikiDueCount(sources.wiki, today);
-      if (wikiCount > 0) {
-        items.push(item("wiki", String(wikiCount), "Wiki cards due", "/wiki-flashcards/"));
+      wikiDue = wikiDueCount(sources.wiki, today);
+      wikiLeft = cardQuota(wikiDue, wikiReviewedToday(sources.wiki, today));
+      if (wikiLeft > 0) {
+        items.push(cardTodoItem("wiki", "Wiki cards", wikiLeft, "/wiki-flashcards/"));
       }
     }
 
     if (sources.chineseError) unknown = true;
     else {
-      chineseCount = chineseDueCount(sources.chinese, today);
-      if (chineseCount > 0) {
-        items.push(item("chinese", String(chineseCount), "Mandarin cards due", "/chinese-library/"));
+      chineseDue = chineseDueCount(sources.chinese, today);
+      chineseLeft = cardQuota(chineseDue, chineseReviewedToday(sources.chinese, today));
+      if (chineseLeft > 0) {
+        items.push(cardTodoItem("chinese", "Mandarin cards", chineseLeft, "/chinese-library/"));
       }
     }
 
@@ -653,6 +915,11 @@
     sectionFilled: sectionFilled,
     mealsLogged: mealsLogged,
     trainingLogged: trainingLogged,
+    foodLeftItem: foodLeftItem,
+    resolveDayType: resolveDayType,
+    cardQuota: cardQuota,
+    wikiReviewedToday: wikiReviewedToday,
+    chineseReviewedToday: chineseReviewedToday,
     wikiDueCount: wikiDueCount,
     chineseDueCount: chineseDueCount,
     speakingDone: speakingDone,
