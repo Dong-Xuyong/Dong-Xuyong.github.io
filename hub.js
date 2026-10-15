@@ -309,12 +309,101 @@
     return { id: id, badge: badge, label: label, href: href };
   }
 
+  function gameTimeKey(time) {
+    var match;
+    var hour;
+    if (typeof time !== "string") return "99:99";
+    match = /^(\d{1,2}):(\d{2})/.exec(time.trim());
+    if (!match) return "99:99";
+    hour = match[1].length === 1 ? "0" + match[1] : match[1];
+    return hour + ":" + match[2];
+  }
+
+  function formatGameDate(date) {
+    var parsed = new Date(date + "T12:00:00Z");
+    if (isNaN(parsed.getTime())) return date;
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Lisbon",
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }).format(parsed);
+  }
+
+  function gameBadge(days) {
+    if (days === 0) return "today";
+    if (days === 1) return "tomorrow";
+    if (days > 1) return "in " + days + "d";
+    return "";
+  }
+
+  // referee-games.json games are upcoming when status is "upcoming" or the
+  // Lisbon calendar date is today or later. Next is the soonest of those on
+  // or after today; if every match is earlier, the closest one.
+  function nextGameItem(file, today) {
+    var games;
+    var i;
+    var future;
+    var futureKey;
+    var past;
+    var pastKey;
+    var chosen;
+    var day;
+    var home;
+    var away;
+    var time;
+    var days;
+    var detail;
+    var row;
+    if (!isRecord(file) || !Array.isArray(file.games)) return null;
+    games = file.games;
+    future = null;
+    futureKey = "";
+    past = null;
+    pastKey = "";
+    for (i = 0; i < games.length; i++) {
+      var game = games[i];
+      var key;
+      if (!isRecord(game)) continue;
+      day = dayStamp(game.date);
+      if (!day) continue;
+      if (game.status !== "upcoming" && day < today) continue;
+      home = typeof game.home === "string" ? game.home.trim() : "";
+      away = typeof game.away === "string" ? game.away.trim() : "";
+      if (!home || !away) continue;
+      key = day + "T" + gameTimeKey(game.time);
+      if (day >= today) {
+        if (!future || key < futureKey) {
+          future = game;
+          futureKey = key;
+        }
+      } else if (!past || key > pastKey) {
+        past = game;
+        pastKey = key;
+      }
+    }
+    chosen = future || past;
+    if (!chosen) return null;
+    day = dayStamp(chosen.date);
+    home = chosen.home.trim();
+    away = chosen.away.trim();
+    time = typeof chosen.time === "string" ? chosen.time.trim() : "";
+    days = daysLeft(today, day);
+    detail = home + " x " + away + ", " + formatGameDate(day);
+    if (time) detail += ", " + time;
+    row = item("next-game", gameBadge(days), "Next game", "/referee-games/");
+    row.detail = detail;
+    return row;
+  }
+
   /**
    * sources.journal / nutrition / streetlifting / wiki / chinese are parsed
    * JSON or null when the file is missing. A true *Error flag means that
    * read failed and the check must stay unknown.
    * speakingRaw is the localStorage string, or null when the key is absent.
    * piano is piano.json, or null when that file is missing.
+   * referee is referee-games.json, or null when that file is missing.
+   * Next game is omitted when the file is missing or nothing is upcoming.
    */
   function missingItems(sources, today) {
     var items = [];
@@ -322,6 +411,7 @@
     var wikiCount;
     var chineseCount;
     var left;
+    var next;
     if (sources.journalError) unknown = true;
     else {
       if (!sectionFilled(dayEntry(sources.journal, today), MORNING_FIELDS)) {
@@ -370,6 +460,9 @@
         items.push(item("chinese", String(chineseCount), "Mandarin cards due", "/chinese-library/"));
       }
     }
+
+    next = nextGameItem(sources.referee, today);
+    if (next) items.push(next);
 
     return { items: items, unknown: unknown };
   }
@@ -444,9 +537,18 @@
       state.items.forEach(function (row) {
         var li = el("li");
         var link = el("a", "today-link");
+        var label;
         link.href = row.href;
-        link.appendChild(el("span", "badge", row.badge));
-        link.appendChild(el("span", "row-label", row.label));
+        if (row.badge) link.appendChild(el("span", "badge", row.badge));
+        if (row.detail) {
+          label = el("span", "row-label");
+          label.appendChild(document.createTextNode(row.label));
+          label.appendChild(document.createElement("br"));
+          label.appendChild(document.createTextNode(row.detail));
+          link.appendChild(label);
+        } else {
+          link.appendChild(el("span", "row-label", row.label));
+        }
         li.appendChild(link);
         list.appendChild(li);
       });
@@ -493,6 +595,7 @@
       ["wiki", "wiki-flashcards"],
       ["chinese", "chinese-library"],
       ["piano", "piano"],
+      ["referee", "referee-games"],
     ];
 
     Promise.all(
@@ -511,6 +614,7 @@
       var failed = [];
       results.forEach(function (result) {
         sources[result.key] = result.data;
+        if (result.key === "referee") return;
         if (result.key === "journal") sources.journalError = result.error;
         if (result.key === "nutrition") sources.nutritionError = result.error;
         if (result.key === "streetlifting") sources.streetError = result.error;
@@ -553,6 +657,7 @@
     chineseDueCount: chineseDueCount,
     speakingDone: speakingDone,
     pianoLogged: pianoLogged,
+    nextGameItem: nextGameItem,
     habitsLeft: habitsLeft,
     boot: boot,
   };
