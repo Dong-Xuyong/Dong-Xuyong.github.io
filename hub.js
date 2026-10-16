@@ -842,6 +842,20 @@
     return String(name || "").trim().toLowerCase();
   }
 
+  var PALETTE_AREAS = {
+    journal: true,
+    study: true,
+    health: true,
+    career: true,
+    mandarin: true,
+    referee: true,
+    "wiki-insights": true,
+  };
+
+  function paletteArea(area) {
+    return area && PALETTE_AREAS[area] ? area : "";
+  }
+
   // Morning is the focus only before noon. Evening joins the list from 18:00,
   // matching missingItems. Anything else in this list is always eligible.
   var FOCUS_IDS = [
@@ -1071,7 +1085,7 @@
     line.appendChild(lineLabel(row));
     if (badgeText) {
       badge = el("span", "badge" + (soon ? " badge-soon" : ""), badgeText);
-      if (mark && mark.area) badge.setAttribute("data-area", mark.area);
+      if (mark && paletteArea(mark.area)) badge.setAttribute("data-area", paletteArea(mark.area));
       line.appendChild(badge);
     }
     return line;
@@ -1137,11 +1151,11 @@
       var focusBadge;
       card = el("a", "focus-card");
       card.href = state.focus.href;
-      if (focusMark && focusMark.area) card.setAttribute("data-area", focusMark.area);
+      if (focusMark && paletteArea(focusMark.area)) card.setAttribute("data-area", paletteArea(focusMark.area));
       card.appendChild(lineLabel(state.focus));
       if (state.focus.badge) {
         focusBadge = el("span", "badge", state.focus.badge);
-        if (focusMark && focusMark.area) focusBadge.setAttribute("data-area", focusMark.area);
+        if (focusMark && paletteArea(focusMark.area)) focusBadge.setAttribute("data-area", paletteArea(focusMark.area));
         card.appendChild(focusBadge);
       }
       card.appendChild(el("span", "go", "Go"));

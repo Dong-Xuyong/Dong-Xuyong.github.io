@@ -371,8 +371,8 @@ assert.ok(html.indexOf("assets/art/wiki-insights.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=11") !== -1);
-assert.ok(html.indexOf("hub.js?v=8") !== -1);
+assert.ok(html.indexOf("styles.css?v=12") !== -1);
+assert.ok(html.indexOf("hub.js?v=9") !== -1);
 var css = fs.readFileSync(require("path").join(__dirname, "styles.css"), "utf8");
 var palette = JSON.parse(fs.readFileSync(require("path").join(__dirname, "assets/art/palette.json"), "utf8"));
 Object.keys(palette).forEach(function (key) {

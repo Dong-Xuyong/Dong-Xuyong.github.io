@@ -248,7 +248,7 @@ summary .row-label {
   padding: 3px 8px;
   border-radius: 999px;
   background: hsl(var(--primary) / 0.12);
-  color: hsl(var(--primary));
+  color: #1558ea;
   font-size: 0.72rem;
   font-weight: 600;
   text-align: center;
@@ -256,13 +256,22 @@ summary .row-label {
   white-space: nowrap;
 }
 
+html.dark .badge {
+  color: #6da2f8;
+}
+
 .badge[data-area] {
-  color: var(--area-ink);
-  background: color-mix(in srgb, var(--area) 10%, transparent);
+  color: var(--area-ink, #1558ea);
+  background: color-mix(in srgb, var(--area, hsl(var(--primary))) 10%, transparent);
+}
+
+html.dark .badge[data-area] {
+  color: var(--area-ink, #6da2f8);
 }
 
 .badge-soon,
-.badge.badge-soon {
+.badge.badge-soon,
+html.dark .badge.badge-soon {
   background: hsl(var(--destructive) / 0.12);
   color: hsl(var(--destructive));
 }
