@@ -55,7 +55,7 @@
     return fmt.format(date);
   }
 
-  // hourCycle h23 can report midnight as 24.
+  // Some engines still report midnight as 24.
   function lisbonHour(date) {
     var fmt = new Intl.DateTimeFormat("en-GB", {
       timeZone: "Europe/Lisbon",
