@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Shell kit demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/dong-ui/theme.css?v=5" />
+  <link rel="stylesheet" href="/ui/shell.css?v=1" />
+  <script src="/dong-ui/theme.js"></script>
+</head>
+<body>
+  <header class="dx-header">
+    <a class="dx-home" href="/" aria-label="Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+    </a>
+    <h1 class="dx-title">Shell kit demo</h1>
+    <div class="dx-actions">
+      <button type="button" data-dong-theme-toggle aria-label="Toggle color theme"></button>
+    </div>
+  </header>
+  <nav class="dx-tabs" aria-label="Demo sections">
+    <a href="/ui/demo.html" aria-current="page">Cards</a>
+    <a href="/ui/demo.html#buttons">Buttons</a>
+    <a href="/ui/demo.html#text">Text</a>
+  </nav>
+  <main class="dx-main">
+    <section class="dx-card">
+      <h2>Card title</h2>
+      <p>Body text on a translucent, blurred card.</p>
+      <p class="dx-muted">Muted text stays AA on the card in both themes.</p>
+    </section>
+    <p id="buttons" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <a class="dx-btn" href="/">Primary</a>
+      <button type="button" class="dx-btn dx-btn--ghost">Ghost</button>
+    </p>
+    <p id="text" class="dx-on-bg">Text placed straight on the background art.</p>
+  </main>
+</body>
+</html>
