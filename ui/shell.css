@@ -15,6 +15,13 @@
   --dx-blur: 16px;
   --dx-gap: 12px;
   --dx-on-bg: #ffffff;
+
+  /* Names from kit v1; some apps already use them. */
+  --dx-fg: var(--dx-text);
+  --dx-primary: var(--dx-accent);
+  --dx-primary-fg: var(--dx-accent-fg);
+  --dx-primary-soft: var(--dx-accent-soft);
+  --dx-ring: var(--dx-accent);
   --dx-bg: #f6f4ef;
   --dx-text: #0d0b08;
   --dx-muted: #5c574f;
