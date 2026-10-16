@@ -381,7 +381,7 @@ assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
 assert.ok(html.indexOf("styles.css?v=15") !== -1);
-assert.ok(html.indexOf("hub.js?v=11") !== -1);
+assert.ok(html.indexOf("hub.js?v=12") !== -1);
 var css = fs.readFileSync(require("path").join(__dirname, "styles.css"), "utf8");
 var palette = JSON.parse(fs.readFileSync(require("path").join(__dirname, "assets/art/palette.json"), "utf8"));
 Object.keys(palette).forEach(function (key) {
@@ -464,12 +464,24 @@ assert.ok(cssRule(css, ".alert-group summary,").indexOf(".bundle > summary") !==
 assert.ok(cssRule(css, ".alert-group summary,").indexOf("min-height: 44px") !== -1);
 
 // 21. Alerts and missions share one collapsed section. Urgent missions redden its summary.
-assert.strictEqual(Hub.bundleLabel(0), "Alerts & missions · 0");
-assert.strictEqual(Hub.bundleLabel(1), "Alerts & missions · 1");
-assert.strictEqual(Hub.bundleLabel(4), "Alerts & missions · 4");
+assert.strictEqual(Hub.bundleSummary(
+  [{ id: "morning" }, { id: "chinese" }, { id: "next-game" }],
+  []
+), "3 missing · 📖 Journal, 🏮 Mandarin, ⚽ Referee");
+assert.strictEqual(Hub.bundleSummary(
+  [{ id: "next-game" }, { id: "habits" }, { id: "evening" }, { id: "chinese" }],
+  []
+), "4 missing · 📖 Journal, 🏮 Mandarin, ⚽ Referee");
+assert.strictEqual(Hub.bundleSummary(
+  [{ id: "wiki" }, { id: "training" }, { id: "speaking" }],
+  [{ area: "Crew", days: 1 }, { area: "Admin", days: 2 }]
+), "5 missing · 💚 Health, 📚 Study, 💼 Practice, 📋 Admin, ⚓ Crew");
+assert.strictEqual(Hub.bundleSummary([{ id: "piano" }], []), "1 missing · 🎹 Practice");
+assert.strictEqual(Hub.bundleSummary([], []), "0 missing");
+assert.strictEqual(Hub.bundleSummary(null, null), "0 missing");
 assert.ok(html.indexOf('id="bundle"') !== -1);
 assert.ok(html.indexOf('class="sheet bundle"') !== -1);
-assert.ok(html.indexOf("Alerts &amp; missions · 0") !== -1);
+assert.ok(html.indexOf(">0 missing<") !== -1);
 assert.ok(html.indexOf('id="bundle"') < html.indexOf('id="alerts"'));
 assert.ok(html.indexOf('id="alerts"') < html.indexOf('id="missions"'));
 assert.ok(html.indexOf('id="missions"') < html.indexOf('class="tiles"'));

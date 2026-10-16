@@ -955,8 +955,26 @@
     return area + " · " + count + " open";
   }
 
-  function bundleLabel(count) {
-    return "Alerts & missions · " + count;
+  // Count is every alert and mission row. Each area is named once, in the
+  // same order as the groups, with that area's emoji.
+  function bundleSummary(alerts, missions) {
+    var alertRows = Array.isArray(alerts) ? alerts : [];
+    var missionRows = Array.isArray(missions) ? missions : [];
+    var parts = [];
+    var n = alertRows.length + missionRows.length;
+    function pushGroup(group) {
+      var mark;
+      var bit;
+      if (!group || !group.area || !group.items || !group.items.length) return;
+      mark = rowVisual(group.items[0]);
+      bit = mark && mark.emoji ? mark.emoji + " " + group.area : group.area;
+      parts.push(bit);
+    }
+    groupItems(alertRows).forEach(pushGroup);
+    groupMissions(missionRows).forEach(pushGroup);
+    if (!n) return "0 missing";
+    if (!parts.length) return String(n) + " missing";
+    return n + " missing · " + parts.join(", ");
   }
 
   // Drop the focus row. Wiki due stays, so it renders under Study.
@@ -980,15 +998,19 @@
     var summary = document.getElementById("bundle-summary");
     var label = document.getElementById("bundle-label");
     var n = bundleAlerts.length + bundleMissions.length;
+    var text = bundleSummary(bundleAlerts, bundleMissions);
+    if (label) label.textContent = text;
+    if (summary) {
+      summary.title = text;
+      summary.setAttribute("aria-label", text);
+    }
     if (!host) return;
     if (!n) {
       host.hidden = true;
-      if (label) label.textContent = bundleLabel(0);
       if (summary) summary.classList.remove("is-soon");
       return;
     }
     host.hidden = false;
-    if (label) label.textContent = bundleLabel(n);
     if (summary) summary.classList.toggle("is-soon", missionUrgent(bundleMissions));
   }
 
@@ -1449,7 +1471,7 @@
     quoteOfDay: quoteOfDay,
     journalCardText: journalCardText,
     hideDoneCard: hideDoneCard,
-    bundleLabel: bundleLabel,
+    bundleSummary: bundleSummary,
     rowsForAlerts: rowsForAlerts,
     AREA_OF: AREA_OF,
     groupItems: groupItems,
