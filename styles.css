@@ -317,23 +317,30 @@ html.dark .badge.badge-soon {
   color: var(--soon-ink);
 }
 
+.bundle {
+  margin-top: 12px;
+}
+
+.bundle[hidden] {
+  display: none;
+}
+
 .alerts {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 12px;
 }
 
-.alerts:empty {
-  margin-top: 0;
+.bundle > .alerts,
+.bundle > .missions {
+  padding: 0 8px 8px;
 }
 
-.missions {
-  margin-top: 8px;
-}
-
+.alerts:empty,
+.missions:empty,
 .missions[hidden] {
   display: none;
+  padding: 0;
 }
 
 .sheet {
@@ -344,6 +351,7 @@ html.dark .badge.badge-soon {
 
 .alert-group summary,
 .missions-details summary,
+.bundle > summary,
 .all-apps summary {
   display: flex;
   align-items: center;
@@ -356,18 +364,21 @@ html.dark .badge.badge-soon {
 
 .alert-group summary::-webkit-details-marker,
 .missions-details summary::-webkit-details-marker,
+.bundle > summary::-webkit-details-marker,
 .all-apps summary::-webkit-details-marker {
   display: none;
 }
 
 .alert-group summary::marker,
 .missions-details summary::marker,
+.bundle > summary::marker,
 .all-apps summary::marker {
   content: "";
 }
 
 .alert-group summary::after,
 .missions-details summary::after,
+.bundle > summary::after,
 .all-apps summary::after {
   content: "›";
   flex: none;
@@ -379,6 +390,7 @@ html.dark .badge.badge-soon {
 
 .alert-group[open] > summary::after,
 .missions-details[open] > summary::after,
+.bundle[open] > summary::after,
 .all-apps[open] > summary::after {
   content: "˅";
 }
@@ -454,24 +466,6 @@ summary.is-soon::after {
   margin-top: 16px;
 }
 
-.wiki-due {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 12px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--area) 10%, hsl(var(--card)));
-  border: 1px solid var(--area-ink);
-  color: var(--area-ink);
-  min-width: 0;
-}
-
-.wiki-due[hidden] {
-  display: none;
-}
-
 .tile {
   display: flex;
   flex-direction: column;
@@ -528,7 +522,6 @@ summary.is-soon::after {
 
 .focus-card:focus-visible,
 .journal-card:focus-visible,
-.wiki-due:focus-visible,
 .tile:focus-visible,
 .line:focus-visible,
 .all-apps a:focus-visible,
@@ -540,7 +533,6 @@ summary:focus-visible,
 
 .focus-card:active,
 .journal-card:active,
-.wiki-due:active,
 .tile:active,
 .line:active,
 .all-apps a:active {

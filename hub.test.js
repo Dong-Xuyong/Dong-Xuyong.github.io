@@ -380,8 +380,8 @@ assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=14") !== -1);
-assert.ok(html.indexOf("hub.js?v=10") !== -1);
+assert.ok(html.indexOf("styles.css?v=15") !== -1);
+assert.ok(html.indexOf("hub.js?v=11") !== -1);
 var css = fs.readFileSync(require("path").join(__dirname, "styles.css"), "utf8");
 var palette = JSON.parse(fs.readFileSync(require("path").join(__dirname, "assets/art/palette.json"), "utf8"));
 Object.keys(palette).forEach(function (key) {
@@ -434,7 +434,7 @@ var journalCardHtml = html.slice(html.indexOf('id="journal-card"'), html.indexOf
 assert.strictEqual(journalCardHtml.indexOf("Journal · write today"), journalCardHtml.lastIndexOf("Journal · write today"));
 assert.ok(journalCardHtml.indexOf("error") === -1);
 
-// 20. Wiki due leaves the focus card and sits under Study.
+// 20. Wiki due leaves the focus card and stays in the Study group.
 var wikiSources = baseSources();
 wikiSources.wiki = { cards: { a: { due: "2026-10-16", reps: 1, st: "learning" } } };
 var wikiItems = Hub.missingItems(wikiSources, today, 14).items;
@@ -448,19 +448,35 @@ assert.strictEqual(Hub.hideDoneCard(wikiItems, 14), false);
 var wikiOnly = [wikiRow];
 assert.strictEqual(Hub.focusItem(wikiOnly, 14), null);
 assert.strictEqual(Hub.hideDoneCard(wikiOnly, 14), true);
-assert.ok(html.indexOf('id="wiki-due"') !== -1);
-assert.ok(html.indexOf('class="wiki-due"') !== -1);
-assert.ok(html.indexOf('id="wiki-due" href="/wiki-flashcards/"') !== -1);
-assert.ok(html.indexOf('id="wiki-due" href="/wiki-flashcards/" data-area="study"') !== -1);
-assert.ok(html.indexOf('data-tile="study"') < html.indexOf('id="wiki-due"'));
-assert.ok(html.indexOf('id="wiki-due"') < html.indexOf('data-tile="health"'));
+var kept = Hub.rowsForAlerts([fake("training"), wikiRow, fake("meals")], "training");
+assert.deepStrictEqual(kept.map(function (row) { return row.id; }), ["wiki", "meals"]);
+assert.deepStrictEqual(Hub.groupItems(kept).map(function (group) { return group.area; }), ["Health", "Study"]);
+assert.strictEqual(Hub.groupItems([wikiRow])[0].area, "Study");
+assert.strictEqual(Hub.groupItems([wikiRow])[0].items[0].href, "/wiki-flashcards/");
+assert.strictEqual(html.indexOf('id="wiki-due"'), -1);
 function cssRule(source, selector) {
   var at = source.indexOf(selector);
   assert.ok(at !== -1, selector);
-  return source.slice(at, at + 500);
+  return source.slice(at, at + 700);
 }
 assert.ok(cssRule(css, ".journal-card {").indexOf("min-height: 44px") !== -1);
-assert.ok(cssRule(css, ".wiki-due {").indexOf("min-height: 44px") !== -1);
-assert.ok(cssRule(css, ".wiki-due {").indexOf("grid-column: 1 / -1") !== -1);
+assert.ok(cssRule(css, ".alert-group summary,").indexOf(".bundle > summary") !== -1);
+assert.ok(cssRule(css, ".alert-group summary,").indexOf("min-height: 44px") !== -1);
+
+// 21. Alerts and missions share one collapsed section. Urgent missions redden its summary.
+assert.strictEqual(Hub.bundleLabel(0), "Alerts & missions · 0");
+assert.strictEqual(Hub.bundleLabel(1), "Alerts & missions · 1");
+assert.strictEqual(Hub.bundleLabel(4), "Alerts & missions · 4");
+assert.ok(html.indexOf('id="bundle"') !== -1);
+assert.ok(html.indexOf('class="sheet bundle"') !== -1);
+assert.ok(html.indexOf("Alerts &amp; missions · 0") !== -1);
+assert.ok(html.indexOf('id="bundle"') < html.indexOf('id="alerts"'));
+assert.ok(html.indexOf('id="alerts"') < html.indexOf('id="missions"'));
+assert.ok(html.indexOf('id="missions"') < html.indexOf('class="tiles"'));
+var bundleStart = html.indexOf('<details class="sheet bundle"');
+assert.ok(bundleStart !== -1);
+var bundleTag = html.slice(bundleStart, html.indexOf(">", bundleStart) + 1);
+assert.strictEqual(bundleTag.indexOf("open"), -1);
+assert.ok(hubSrc.indexOf('classList.toggle("is-soon", missionUrgent(bundleMissions))') !== -1);
 
 console.log("hub.test.js: ok");
