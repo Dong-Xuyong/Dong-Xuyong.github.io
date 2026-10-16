@@ -193,6 +193,24 @@
     return isRecord(entry) ? entry : null;
   }
 
+  // journal.json quotes["YYYY-MM-DD"].text. Same field as Journal
+  // (Dong-Xuyong/journal). Empty when the day has no quote.
+  var JOURNAL_CARD_EMPTY = "Journal · write today";
+
+  function quoteOfDay(file, today) {
+    var quote;
+    var text;
+    if (!isRecord(file) || !isRecord(file.quotes)) return "";
+    quote = file.quotes[today];
+    if (!isRecord(quote) || typeof quote.text !== "string") return "";
+    text = quote.text.replace(/\s+/g, " ").trim();
+    return text;
+  }
+
+  function journalCardText(file, today) {
+    return quoteOfDay(file, today) || JOURNAL_CARD_EMPTY;
+  }
+
   function sectionFilled(entry, keys) {
     var fields = fieldsOf(entry);
     var i;
@@ -857,12 +875,12 @@
   }
 
   // Morning is the focus only before noon. Evening joins the list from 18:00,
-  // matching missingItems. Anything else in this list is always eligible.
+  // matching missingItems. Wiki due is a row under Study, not a focus card.
+  // Anything else in this list is always eligible.
   var FOCUS_IDS = [
     "morning",
     "training",
     "meals",
-    "wiki",
     "chinese",
     "speaking",
     "piano",
@@ -915,6 +933,15 @@
       return byId[id];
     }
     return null;
+  }
+
+  // True when wiki cards are the only thing that would have filled the focus
+  // card. The done card stays hidden; the count renders under Study instead.
+  function hideDoneCard(items, hour) {
+    var wiki;
+    if (focusItem(items, hour)) return false;
+    wiki = findItem(Array.isArray(items) ? items : [], "wiki");
+    return !!wiki;
   }
 
   function groupMissions(rows) {
@@ -1163,6 +1190,10 @@
       host.setAttribute("data-focus", state.focus.id);
       return;
     }
+    if (state.hideDone) {
+      host.setAttribute("data-focus", state.unknown ? "error" : "off");
+      return;
+    }
     if (!state.unknown) {
       host.appendChild(el("p", "focus-card focus-done", "All done today"));
       host.setAttribute("data-focus", "done");
@@ -1211,6 +1242,29 @@
     });
   }
 
+  function renderJournal(text) {
+    var card = document.getElementById("journal-card");
+    var node = document.getElementById("journal-line");
+    var line = text && String(text).trim() ? String(text).trim() : JOURNAL_CARD_EMPTY;
+    if (node) node.textContent = line;
+    if (!card) return;
+    if (line === JOURNAL_CARD_EMPTY) card.removeAttribute("title");
+    else card.title = line;
+  }
+
+  function renderWikiDue(row) {
+    var host = document.getElementById("wiki-due");
+    var count = document.getElementById("wiki-due-count");
+    if (!host) return;
+    if (!row) {
+      host.hidden = true;
+      if (count) count.textContent = "";
+      return;
+    }
+    if (count) count.textContent = row.badge ? row.badge + " to do" : "";
+    host.hidden = false;
+  }
+
   function renderTiles(counts) {
     var nodes;
     var i;
@@ -1243,12 +1297,16 @@
     var hour = lisbonHour(new Date());
     var names;
     if (!cfg) {
+      renderJournal(JOURNAL_CARD_EMPTY);
+      renderWikiDue(null);
       renderFocus({ connected: false });
       renderAlerts([]);
       renderTiles(neutralTiles());
       return;
     }
 
+    renderJournal(JOURNAL_CARD_EMPTY);
+    renderWikiDue(null);
     renderFocus({ connected: true, loading: true });
     renderAlerts([]);
 
@@ -1306,12 +1364,16 @@
       report = missingItems(sources, today, hour);
       focus = focusItem(report.items, hour);
       report.items.forEach(function (row) {
+        if (row.id === "wiki") return;
         if (!focus || row.id !== focus.id) alerts.push(row);
       });
+      renderJournal(sources.journalError ? JOURNAL_CARD_EMPTY : journalCardText(sources.journal, today));
+      renderWikiDue(findItem(report.items, "wiki"));
       renderFocus({
         connected: true,
         focus: focus,
         unknown: report.unknown,
+        hideDone: hideDoneCard(report.items, hour),
         note: failed.length ? "Some logs could not be read." : "",
       });
       renderAlerts(alerts);
@@ -1355,6 +1417,9 @@
     nextGameItem: nextGameItem,
     habitsLeft: habitsLeft,
     greeting: greeting,
+    quoteOfDay: quoteOfDay,
+    journalCardText: journalCardText,
+    hideDoneCard: hideDoneCard,
     AREA_OF: AREA_OF,
     groupItems: groupItems,
     focusItem: focusItem,
