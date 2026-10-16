@@ -955,6 +955,43 @@
     return area + " · " + count + " open";
   }
 
+  function bundleLabel(count) {
+    return "Alerts & missions · " + count;
+  }
+
+  // Drop the focus row. Wiki due stays, so it renders under Study.
+  function rowsForAlerts(items, focusId) {
+    var out = [];
+    var i;
+    if (!Array.isArray(items)) return out;
+    for (i = 0; i < items.length; i++) {
+      if (!items[i]) continue;
+      if (focusId && items[i].id === focusId) continue;
+      out.push(items[i]);
+    }
+    return out;
+  }
+
+  var bundleAlerts = [];
+  var bundleMissions = [];
+
+  function paintBundle() {
+    var host = document.getElementById("bundle");
+    var summary = document.getElementById("bundle-summary");
+    var label = document.getElementById("bundle-label");
+    var n = bundleAlerts.length + bundleMissions.length;
+    if (!host) return;
+    if (!n) {
+      host.hidden = true;
+      if (label) label.textContent = bundleLabel(0);
+      if (summary) summary.classList.remove("is-soon");
+      return;
+    }
+    host.hidden = false;
+    if (label) label.textContent = bundleLabel(n);
+    if (summary) summary.classList.toggle("is-soon", missionUrgent(bundleMissions));
+  }
+
   function missionHeadline(rows) {
     var next;
     var when;
@@ -1124,10 +1161,15 @@
     var details;
     var summary;
     var groups;
-    if (!host) return;
+    bundleMissions = rows;
+    if (!host) {
+      paintBundle();
+      return;
+    }
     host.textContent = "";
     if (!rows.length) {
       host.hidden = true;
+      paintBundle();
       return;
     }
     host.hidden = false;
@@ -1150,6 +1192,7 @@
       details.appendChild(block);
     });
     host.appendChild(details);
+    paintBundle();
   }
 
   function renderFocus(state) {
@@ -1222,9 +1265,13 @@
   function renderAlerts(items) {
     var host = document.getElementById("alerts");
     var groups;
-    if (!host) return;
+    bundleAlerts = Array.isArray(items) ? items : [];
+    if (!host) {
+      paintBundle();
+      return;
+    }
     host.textContent = "";
-    groups = groupItems(items || []);
+    groups = groupItems(bundleAlerts);
     groups.forEach(function (group) {
       var details = el("details", "sheet alert-group");
       var summary = el("summary");
@@ -1240,6 +1287,7 @@
       details.appendChild(list);
       host.appendChild(details);
     });
+    paintBundle();
   }
 
   function renderJournal(text) {
@@ -1250,19 +1298,6 @@
     if (!card) return;
     if (line === JOURNAL_CARD_EMPTY) card.removeAttribute("title");
     else card.title = line;
-  }
-
-  function renderWikiDue(row) {
-    var host = document.getElementById("wiki-due");
-    var count = document.getElementById("wiki-due-count");
-    if (!host) return;
-    if (!row) {
-      host.hidden = true;
-      if (count) count.textContent = "";
-      return;
-    }
-    if (count) count.textContent = row.badge ? row.badge + " to do" : "";
-    host.hidden = false;
   }
 
   function renderTiles(counts) {
@@ -1298,7 +1333,6 @@
     var names;
     if (!cfg) {
       renderJournal(JOURNAL_CARD_EMPTY);
-      renderWikiDue(null);
       renderFocus({ connected: false });
       renderAlerts([]);
       renderTiles(neutralTiles());
@@ -1306,7 +1340,6 @@
     }
 
     renderJournal(JOURNAL_CARD_EMPTY);
-    renderWikiDue(null);
     renderFocus({ connected: true, loading: true });
     renderAlerts([]);
 
@@ -1363,12 +1396,8 @@
       });
       report = missingItems(sources, today, hour);
       focus = focusItem(report.items, hour);
-      report.items.forEach(function (row) {
-        if (row.id === "wiki") return;
-        if (!focus || row.id !== focus.id) alerts.push(row);
-      });
+      alerts = rowsForAlerts(report.items, focus && focus.id);
       renderJournal(sources.journalError ? JOURNAL_CARD_EMPTY : journalCardText(sources.journal, today));
-      renderWikiDue(findItem(report.items, "wiki"));
       renderFocus({
         connected: true,
         focus: focus,
@@ -1420,6 +1449,8 @@
     quoteOfDay: quoteOfDay,
     journalCardText: journalCardText,
     hideDoneCard: hideDoneCard,
+    bundleLabel: bundleLabel,
+    rowsForAlerts: rowsForAlerts,
     AREA_OF: AREA_OF,
     groupItems: groupItems,
     focusItem: focusItem,

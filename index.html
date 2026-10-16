@@ -7,7 +7,7 @@
   <title>Dong Apps</title>
   <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dong-ui/theme.css?v=5" />
-  <link rel="stylesheet" href="styles.css?v=14" />
+  <link rel="stylesheet" href="styles.css?v=15" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
   <script src="dong-ui/theme.js"></script>
 </head>
@@ -29,8 +29,11 @@
     </a>
 
     <section id="focus" class="focus" aria-live="polite"></section>
-    <section id="alerts" class="alerts" aria-label="Alerts"></section>
-    <section id="missions" class="missions" hidden></section>
+    <details class="sheet bundle" id="bundle" hidden>
+      <summary id="bundle-summary"><span class="row-label" id="bundle-label">Alerts &amp; missions · 0</span></summary>
+      <div id="alerts" class="alerts" aria-label="Alerts"></div>
+      <div id="missions" class="missions" hidden></div>
+    </details>
 
     <nav class="tiles" aria-label="Main apps">
       <a class="tile" data-tile="wiki-insights" href="/wiki-flashcards/insights/" data-area="wiki-insights">
@@ -46,10 +49,6 @@
           <span class="tile-name"><span class="row-emoji" aria-hidden="true">📚</span>Study</span>
           <span class="tile-count">—</span>
         </span>
-      </a>
-      <a class="wiki-due" id="wiki-due" href="/wiki-flashcards/" data-area="study" hidden>
-        <span class="row-label"><span class="row-emoji" aria-hidden="true">📚</span><span id="wiki-due-label">Wiki cards</span></span>
-        <span class="badge" id="wiki-due-count" data-area="study"></span>
       </a>
       <a class="tile" data-tile="health" href="/health/" data-area="health">
         <img class="tile-art" src="assets/art/health.webp" alt="" width="52" height="52" loading="lazy" decoding="async" />
@@ -129,6 +128,6 @@
     </details>
   </main>
   <script src="dong-ui/gh-sync.js?v=1"></script>
-  <script src="hub.js?v=10"></script>
+  <script src="hub.js?v=11"></script>
 </body>
 </html>
