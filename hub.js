@@ -55,6 +55,23 @@
     return fmt.format(date);
   }
 
+  // hourCycle h23 can report midnight as 24.
+  function lisbonHour(date) {
+    var fmt = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Lisbon",
+      hour: "2-digit",
+      hourCycle: "h23",
+    });
+    var parts = fmt.formatToParts(date);
+    var i;
+    var hour = NaN;
+    for (i = 0; i < parts.length; i++) {
+      if (parts[i].type === "hour") hour = +parts[i].value;
+    }
+    if (hour === 24) return 0;
+    return hour;
+  }
+
   function todayKey(now) {
     return lisbonDay(now || new Date());
   }
@@ -75,13 +92,18 @@
     return Math.round((b - a) / 86400000);
   }
 
-  function activeMissions(today) {
+  function activeMissions(today, extra) {
     var rows = [];
-    MISSIONS.forEach(function (mission) {
+    var missions = Array.isArray(extra) ? MISSIONS.concat(extra) : MISSIONS;
+    missions.forEach(function (mission) {
+      var left;
+      var row;
       if (!mission || typeof mission.label !== "string" || typeof mission.due !== "string") return;
-      var left = daysLeft(today, mission.due);
-      if (left == null || left < 0) return;
-      rows.push({ label: mission.label, due: mission.due, days: left });
+      left = daysLeft(today, mission.due);
+      if (left == null) return;
+      row = { label: mission.label, due: mission.due, days: left };
+      if (typeof mission.href === "string" && mission.href) row.href = mission.href;
+      rows.push(row);
     });
     rows.sort(function (a, b) {
       return a.days - b.days || a.due.localeCompare(b.due);
@@ -92,7 +114,34 @@
   function countdown(days) {
     if (days === 0) return "today";
     if (days === 1) return "1 day";
+    if (days === -1) return "1 day overdue";
+    if (days < 0) return (-days) + " days overdue";
     return days + " days";
+  }
+
+  function crewMissions(file) {
+    var jobs;
+    var out = [];
+    var i;
+    var job;
+    var title;
+    var due;
+    var label;
+    if (!isRecord(file) || !Array.isArray(file.jobs)) return [];
+    jobs = file.jobs;
+    for (i = 0; i < jobs.length; i++) {
+      job = jobs[i];
+      if (!isRecord(job)) continue;
+      title = job.title;
+      if (typeof title !== "string" || title.trim() === "") continue;
+      due = job.due;
+      if (typeof due !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(due)) continue;
+      if (job.status === "complete" || job.status === "cancelled" || job.status === "done") continue;
+      label = title.replace(/^\d{4}-\d{2}-\d{2} /, "");
+      if (!label) label = title;
+      out.push({ label: label, due: due, href: "/crew-log/" });
+    }
+    return out;
   }
 
   function isRecord(value) {
@@ -160,9 +209,11 @@
     var habits = entry && isRecord(entry.habits) ? entry.habits : null;
     var left = 0;
     var i;
-    if (!habits) return ids.length;
+    var id;
     for (i = 0; i < ids.length; i++) {
-      if (habits[ids[i]] !== true) left += 1;
+      id = ids[i];
+      if (id === "training" || id === "food_logged" || id === "speaking") continue;
+      if (!habits || habits[id] !== true) left += 1;
     }
     return left;
   }
@@ -337,16 +388,13 @@
     return "";
   }
 
-  // referee-games.json games are upcoming when status is "upcoming" or the
-  // Lisbon calendar date is today or later. Next is the soonest of those on
-  // or after today; if every match is earlier, the closest one.
+  // Games are upcoming when the Lisbon date is today or later. Next is the
+  // soonest of those; null when none.
   function nextGameItem(file, today) {
     var games;
     var i;
     var future;
     var futureKey;
-    var past;
-    var pastKey;
     var chosen;
     var day;
     var home;
@@ -359,30 +407,23 @@
     games = file.games;
     future = null;
     futureKey = "";
-    past = null;
-    pastKey = "";
     for (i = 0; i < games.length; i++) {
       var game = games[i];
       var key;
       if (!isRecord(game)) continue;
       day = dayStamp(game.date);
       if (!day) continue;
-      if (game.status !== "upcoming" && day < today) continue;
+      if (day < today) continue;
       home = typeof game.home === "string" ? game.home.trim() : "";
       away = typeof game.away === "string" ? game.away.trim() : "";
       if (!home || !away) continue;
       key = day + "T" + gameTimeKey(game.time);
-      if (day >= today) {
-        if (!future || key < futureKey) {
-          future = game;
-          futureKey = key;
-        }
-      } else if (!past || key > pastKey) {
-        past = game;
-        pastKey = key;
+      if (!future || key < futureKey) {
+        future = game;
+        futureKey = key;
       }
     }
-    chosen = future || past;
+    chosen = future;
     if (!chosen) return null;
     day = dayStamp(chosen.date);
     home = chosen.home.trim();
@@ -655,9 +696,9 @@
    * piano is piano.json, or null when that file is missing.
    * referee is referee-games.json, or null when that file is missing.
    * Next game is omitted when the file is missing or nothing is upcoming.
-   * Food left still renders from a missing nutrition file (full targets).
+   * Food left renders only after the first meal is logged.
    */
-  function missingItems(sources, today) {
+  function missingItems(sources, today, hour) {
     var items = [];
     var unknown = false;
     var wikiDue;
@@ -667,12 +708,17 @@
     var food;
     var left;
     var next;
+    var showEvening;
+    var nutDay;
+    var journalEntry;
+    var speakingHabit;
+    showEvening = !(typeof hour === "number" && isFinite(hour)) || hour >= 18;
     if (sources.journalError) unknown = true;
     else {
       if (!sectionFilled(dayEntry(sources.journal, today), MORNING_FIELDS)) {
         items.push(item("morning", "open", "Morning journal", "/journal/#day/" + today));
       }
-      if (!sectionFilled(dayEntry(sources.journal, today), EVENING_FIELDS)) {
+      if (showEvening && !sectionFilled(dayEntry(sources.journal, today), EVENING_FIELDS)) {
         items.push(item("evening", "open", "Evening journal", "/journal/#day/" + today));
       }
       left = habitsLeft(sources.journal, today);
@@ -686,17 +732,27 @@
       items.push(item("meals", "open", "Meals not logged", "/nutrition/#" + today));
     }
 
-    if (!sources.nutritionError) {
+    if (!sources.nutritionError && mealsLogged(sources.nutrition, today)) {
       food = foodLeftItem(sources.nutrition, sources.streetlifting, today);
       if (food) items.push(food);
     }
 
     if (sources.streetError) unknown = true;
     else if (!trainingLogged(sources.streetlifting, today)) {
-      items.push(item("training", "open", "Training not logged", "/streetlifting/"));
+      nutDay = sources.nutritionError ? null : nutritionDay(sources.nutrition, today);
+      if (!(nutDay && normalizeDayType(nutDay.dayType) === "rest")) {
+        items.push(item("training", "open", "Training not logged", "/streetlifting/"));
+      }
     }
 
-    if (!speakingDone(sources.speakingRaw, today)) {
+    speakingHabit = false;
+    if (!sources.journalError) {
+      journalEntry = dayEntry(sources.journal, today);
+      if (journalEntry && isRecord(journalEntry.habits) && journalEntry.habits.speaking === true) {
+        speakingHabit = true;
+      }
+    }
+    if (!speakingDone(sources.speakingRaw, today) && !speakingHabit) {
       items.push(item("speaking", "open", "Speaking practice", "/speaking-analysis/"));
     }
 
@@ -736,9 +792,9 @@
     return node;
   }
 
-  function renderMissions(today) {
+  function renderMissions(today, extra) {
     var host = document.getElementById("missions");
-    var rows = activeMissions(today);
+    var rows = activeMissions(today, extra);
     var list;
     if (!host) return;
     host.textContent = "";
@@ -752,8 +808,15 @@
     rows.forEach(function (row) {
       var li = el("li");
       var badge = el("span", "badge" + (row.days <= 3 ? " badge-soon" : ""), countdown(row.days));
+      var label;
       li.appendChild(badge);
-      li.appendChild(el("span", "row-label", row.label));
+      if (row.href) {
+        label = el("a", "row-label", row.label);
+        label.href = row.href;
+        li.appendChild(label);
+      } else {
+        li.appendChild(el("span", "row-label", row.label));
+      }
       list.appendChild(li);
     });
     host.appendChild(list);
@@ -831,6 +894,7 @@
   function loadToday(today) {
     var cfg = root.GhSync && root.GhSync.readConfig ? root.GhSync.readConfig() : null;
     var speakingRaw = readSpeakingRaw();
+    var hour = lisbonHour(new Date());
     if (!cfg) {
       var offline = missingItems(
         {
@@ -842,13 +906,21 @@
           chineseError: true,
           pianoError: true,
         },
-        today
+        today,
+        hour
       );
       renderToday({ connected: false, items: offline.items, unknown: true });
       return;
     }
 
     renderToday({ connected: true, loading: true, items: [], unknown: true });
+
+    root.GhSync.fetchJson(cfg, "crew-log").then(
+      function (data) {
+        renderMissions(today, crewMissions(data));
+      },
+      function () {}
+    );
 
     var names = [
       ["journal", "journal"],
@@ -885,7 +957,7 @@
         if (result.key === "piano") sources.pianoError = result.error;
         if (result.error) failed.push(result.key);
       });
-      var report = missingItems(sources, today);
+      var report = missingItems(sources, today, hour);
       renderToday({
         connected: true,
         items: report.items,
@@ -911,6 +983,8 @@
     daysLeft: daysLeft,
     activeMissions: activeMissions,
     countdown: countdown,
+    crewMissions: crewMissions,
+    lisbonHour: lisbonHour,
     missingItems: missingItems,
     sectionFilled: sectionFilled,
     mealsLogged: mealsLogged,
