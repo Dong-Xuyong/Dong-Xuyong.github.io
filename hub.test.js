@@ -380,7 +380,7 @@ assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=15") !== -1);
+assert.ok(html.indexOf("styles.css?v=16") !== -1);
 assert.ok(html.indexOf("hub.js?v=12") !== -1);
 var css = fs.readFileSync(require("path").join(__dirname, "styles.css"), "utf8");
 var palette = JSON.parse(fs.readFileSync(require("path").join(__dirname, "assets/art/palette.json"), "utf8"));
