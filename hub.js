@@ -758,7 +758,7 @@
 
     if (sources.pianoError) unknown = true;
     else if (!pianoLogged(sources.piano, today)) {
-      items.push(item("piano", "open", "Piano practice", "/piano/"));
+      items.push(item("piano", "open", "Piano practice", "/piano/#/log"));
     }
 
     if (sources.wikiError) unknown = true;
