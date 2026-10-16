@@ -133,6 +133,56 @@ spoken.journal = {
 };
 assert.strictEqual(itemById(Hub.missingItems(spoken, today, 19).items, "speaking"), null);
 assert.ok(itemById(Hub.missingItems(baseSources(), today, 19).items, "speaking"));
+assert.strictEqual(Hub.speakingStatus(baseSources(), today).action, "Go");
+assert.strictEqual(Hub.speakingStatus(baseSources(), today).badge, "open");
+
+// 6b. Speaking practice reads the speaking-analysis session and practice logs.
+var practiced = baseSources();
+practiced.speakingPractice = [
+  { date: "2026-10-16", title: "RAG eval", done: true },
+  { date: "2026-10-15", title: "Sunday", focus: "No like" },
+];
+assert.strictEqual(Hub.speakingStatus(practiced, today).done, true);
+assert.strictEqual(Hub.speakingStatus(practiced, today).action, "✓");
+assert.strictEqual(Hub.speakingStatus(practiced, today).badge, "✓");
+assert.strictEqual(itemById(Hub.missingItems(practiced, today, 19).items, "speaking"), null);
+assert.strictEqual(Hub.missingItems(practiced, today, 19).speakingDone, true);
+assert.strictEqual(Hub.missingItems(practiced, today, 19).unknown, false);
+var promptOnly = baseSources();
+promptOnly.speakingPractice = [{ date: "2026-10-16", title: "Prompt" }];
+assert.strictEqual(Hub.speakingStatus(promptOnly, today).done, false);
+assert.ok(itemById(Hub.missingItems(promptOnly, today, 19).items, "speaking"));
+var catalogToday = baseSources();
+catalogToday.speakingCatalog = {
+  sessions: [{ slug: "today", date: "2026-10-16", title: "Drive rep" }],
+};
+assert.strictEqual(Hub.speakingStatus(catalogToday, today).done, true);
+assert.strictEqual(itemById(Hub.missingItems(catalogToday, today, 19).items, "speaking"), null);
+var catalogOld = baseSources();
+catalogOld.speakingCatalog = {
+  sessions: [{ slug: "old", date: "2026-10-14", title: "Thesis" }],
+};
+assert.strictEqual(Hub.speakingStatus(catalogOld, today).done, false);
+var syncSessions = baseSources();
+syncSessions.speaking = { sessions: { "2026-10-16": { minutes: 2 } } };
+assert.strictEqual(Hub.speakingStatus(syncSessions, today).done, true);
+var syncList = baseSources();
+syncList.speaking = { sessions: [{ date: "2026-10-16T22:30:00Z" }] };
+assert.strictEqual(Hub.speakingStatus(syncList, today).done, true);
+var nextLisbonDay = baseSources();
+nextLisbonDay.speaking = { sessions: [{ date: "2026-10-16T23:30:00Z" }] };
+assert.strictEqual(Hub.speakingStatus(nextLisbonDay, today).done, false);
+var broken = baseSources();
+broken.speaking = "{";
+broken.speakingCatalog = null;
+broken.speakingPractice = { done: true };
+broken.speakingRaw = "{";
+assert.strictEqual(Hub.speakingStatus(broken, today).done, false);
+assert.strictEqual(Hub.missingItems(broken, today, 19).unknown, false);
+assert.ok(itemById(Hub.missingItems(broken, today, 19).items, "speaking"));
+var marked = baseSources();
+marked.speakingMark = true;
+assert.strictEqual(Hub.speakingStatus(marked, today).done, true);
 
 // 7. Evening journal from 18:00.
 assert.strictEqual(itemById(Hub.missingItems(baseSources(), today, 9).items, "evening"), null);
@@ -380,8 +430,8 @@ assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=16") !== -1);
-assert.ok(html.indexOf("hub.js?v=12") !== -1);
+assert.ok(html.indexOf("styles.css?v=17") !== -1);
+assert.ok(html.indexOf("hub.js?v=13") !== -1);
 var css = fs.readFileSync(require("path").join(__dirname, "styles.css"), "utf8");
 var palette = JSON.parse(fs.readFileSync(require("path").join(__dirname, "assets/art/palette.json"), "utf8"));
 Object.keys(palette).forEach(function (key) {
