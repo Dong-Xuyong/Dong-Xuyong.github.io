@@ -29,7 +29,7 @@
       40% { opacity: 1; }
       100% { opacity: 0; visibility: hidden; }
     }
-    @media (prefers-reduced-motion: reduce) {
+    @media not all and (display-mode: standalone), (prefers-reduced-motion: reduce) {
       .boot { display: none; }
     }
   </style>
@@ -166,7 +166,8 @@
     (function () {
       var el = document.querySelector(".boot");
       if (!el) return;
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (!window.matchMedia("(display-mode: standalone)").matches ||
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         el.remove();
         return;
       }
