@@ -16,6 +16,7 @@
   --area-mandarin-ink: #B5393D;
   --area-referee-ink: #0C7267;
   --area-wiki-insights-ink: #096B97;
+  --soon-ink: #c02626;
 }
 
 html.dark {
@@ -26,6 +27,7 @@ html.dark {
   --area-mandarin-ink: #ED7F82;
   --area-referee-ink: #14B8A6;
   --area-wiki-insights-ink: #18A9EA;
+  --soon-ink: #f87171;
 }
 
 [data-area="journal"] {
@@ -273,7 +275,7 @@ html.dark .badge[data-area] {
 .badge.badge-soon,
 html.dark .badge.badge-soon {
   background: hsl(var(--destructive) / 0.12);
-  color: hsl(var(--destructive));
+  color: var(--soon-ink);
 }
 
 .alerts {
@@ -344,7 +346,7 @@ html.dark .badge.badge-soon {
 
 summary.is-soon,
 summary.is-soon::after {
-  color: hsl(var(--destructive));
+  color: var(--soon-ink);
 }
 
 .area-label,
