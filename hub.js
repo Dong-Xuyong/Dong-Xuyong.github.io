@@ -356,8 +356,7 @@
     return dayStamp(trimmed);
   }
 
-  // Speaking Coach still mirrors a tap into localStorage checkins.
-  // Missing, unreadable, or a checkins list without today means not done.
+  // Legacy on-device check-in blob. Usopp does not use this key.
   function speakingDone(raw, today) {
     var parsed;
     var checkins;
@@ -376,72 +375,58 @@
     return false;
   }
 
-  // requireDone is the practice log (reps.json): the row must be marked done.
-  // Sessions count when the date matches, including audio-only memos.
+  // A bare array, or any list hanging off an object. Anything else is empty.
+  function listsIn(file) {
+    var out = [];
+    var keys;
+    var i;
+    if (file == null || file === "") return out;
+    if (typeof file === "string") {
+      try {
+        return listsIn(JSON.parse(file));
+      } catch (e) {
+        return out;
+      }
+    }
+    if (Array.isArray(file)) {
+      out.push(file);
+      return out;
+    }
+    if (!isRecord(file)) return out;
+    keys = Object.keys(file);
+    for (i = 0; i < keys.length; i++) {
+      if (Array.isArray(file[keys[i]])) out.push(file[keys[i]]);
+    }
+    return out;
+  }
+
+  // requireDone is reps.json: the row's date must match and done must be true.
+  // index.json sessions count when date matches, even without a done flag.
   function listHasPractice(list, today, requireDone) {
     var i;
     var row;
-    var day;
     if (!Array.isArray(list)) return false;
     for (i = 0; i < list.length; i++) {
       row = list[i];
-      if (typeof row === "string" || typeof row === "number") {
-        if (!requireDone && practiceDay(row) === today) return true;
-        continue;
-      }
       if (!isRecord(row)) continue;
-      day = practiceDay(row.date || row.day);
-      if (day !== today) continue;
+      if (practiceDay(row.date) !== today) continue;
       if (requireDone && row.done !== true) continue;
       return true;
     }
     return false;
   }
 
-  function mapHasPractice(map, today) {
-    var entry;
-    var keys;
+  function practiceListHas(file, today, requireDone) {
+    var lists;
     var i;
-    if (!isRecord(map)) return false;
-    if (Object.prototype.hasOwnProperty.call(map, today)) {
-      entry = map[today];
-      if (entry != null && entry !== false) return true;
+    try {
+      lists = listsIn(file);
+    } catch (e) {
+      return false;
     }
-    keys = Object.keys(map);
-    for (i = 0; i < keys.length; i++) {
-      entry = map[keys[i]];
-      if (typeof entry === "string" || typeof entry === "number") {
-        if (practiceDay(entry) === today) return true;
-        continue;
-      }
-      if (isRecord(entry) && practiceDay(entry.date || entry.day) === today) return true;
+    for (i = 0; i < lists.length; i++) {
+      if (listHasPractice(lists[i], today, requireDone)) return true;
     }
-    return false;
-  }
-
-  // progress-sync speaking.json and speaking-analysis data/index.json both
-  // keep a sessions/practice log. A session for today, or a practice-log
-  // entry with done true, means the day is done. Bad shapes are not done.
-  function fileHasPractice(file, today) {
-    var parsed;
-    if (file == null || file === "") return false;
-    if (typeof file === "string") {
-      try {
-        parsed = JSON.parse(file);
-      } catch (e) {
-        return false;
-      }
-      return fileHasPractice(parsed, today);
-    }
-    if (Array.isArray(file)) return listHasPractice(file, today, true);
-    if (!isRecord(file)) return false;
-    if (Array.isArray(file.checkins) && listHasPractice(file.checkins, today, false)) return true;
-    if (Array.isArray(file.sessions) && listHasPractice(file.sessions, today, false)) return true;
-    if (isRecord(file.sessions) && mapHasPractice(file.sessions, today)) return true;
-    if (Array.isArray(file.reps) && listHasPractice(file.reps, today, true)) return true;
-    if (Array.isArray(file.practice) && listHasPractice(file.practice, today, true)) return true;
-    if (isRecord(file.practice) && mapHasPractice(file.practice, today)) return true;
-    if (isRecord(file.days) && mapHasPractice(file.days, today)) return true;
     return false;
   }
 
@@ -452,16 +437,15 @@
     return !!(journalEntry && isRecord(journalEntry.habits) && journalEntry.habits.speaking === true);
   }
 
-  // Same signals Speaking Coach uses: a session dated today, or today's
-  // practice-log entry marked done. localStorage is only the on-device copy.
+  // Usopp does not write practice into progress-sync. A Lisbon day is done
+  // when any of these is true: localStorage speaking-done:YYYY-MM-DD === "1",
+  // reps.json has that date with done true, or index.json has a session that day.
   function speakingLogged(sources, today) {
-    if (!sources) return false;
+    if (!sources || typeof today !== "string") return false;
     try {
       if (sources.speakingMark === true) return true;
-      if (speakingDone(sources.speakingRaw, today)) return true;
-      if (fileHasPractice(sources.speaking, today)) return true;
-      if (fileHasPractice(sources.speakingCatalog, today)) return true;
-      if (fileHasPractice(sources.speakingPractice, today)) return true;
+      if (practiceListHas(sources.speakingCatalog, today, false)) return true;
+      if (practiceListHas(sources.speakingPractice, today, true)) return true;
     } catch (e) {
       return false;
     }
@@ -844,10 +828,10 @@
    * sources.journal / nutrition / streetlifting / wiki / chinese are parsed
    * JSON or null when the file is missing. A true *Error flag means that
    * read failed and the check must stay unknown.
-   * speakingRaw is the localStorage string, or null when the key is absent.
-   * speaking is progress-sync speaking.json. speakingCatalog is
-   * speaking-analysis data/index.json. speakingPractice is data/reps.json.
-   * Missing or unreadable speaking logs are not done.
+   * speakingMark is localStorage speaking-done:YYYY-MM-DD === "1".
+   * speakingCatalog is speaking-analysis data/index.json.
+   * speakingPractice is speaking-analysis data/reps.json.
+   * Practice is not stored in progress-sync. A missing log is not done.
    * piano is piano.json, or null when that file is missing.
    * referee is referee-games.json, or null when that file is missing.
    * Next game is omitted when the file is missing or nothing is upcoming.
@@ -1478,14 +1462,8 @@
     }
   }
 
-  function readSpeakingRaw() {
-    try {
-      if (!root.localStorage) return null;
-      return root.localStorage.getItem("speaking-coach-practice");
-    } catch (e) {
-      return null;
-    }
-  }
+  var SPEAKING_INDEX_URL = "https://dong-xuyong.github.io/speaking-analysis/data/index.json";
+  var SPEAKING_REPS_URL = "https://dong-xuyong.github.io/speaking-analysis/data/reps.json";
 
   function readSpeakingMark(today) {
     try {
@@ -1499,8 +1477,9 @@
   function fetchSpeakingPublic() {
     var fetchFn = root.fetch;
     function one(url) {
+      var busted = url + "?t=" + Date.now();
       if (typeof fetchFn !== "function") return Promise.resolve(null);
-      return fetchFn(url, { cache: "no-store" }).then(
+      return fetchFn(busted, { cache: "no-store" }).then(
         function (res) {
           if (!res || !res.ok) return null;
           return res.json().catch(function () {
@@ -1512,10 +1491,7 @@
         }
       );
     }
-    return Promise.all([
-      one("/speaking-analysis/data/index.json"),
-      one("/speaking-analysis/data/reps.json"),
-    ]).then(
+    return Promise.all([one(SPEAKING_INDEX_URL), one(SPEAKING_REPS_URL)]).then(
       function (pair) {
         return {
           key: "speakingPublic",
@@ -1531,7 +1507,6 @@
 
   function loadToday(today) {
     var cfg = root.GhSync && root.GhSync.readConfig ? root.GhSync.readConfig() : null;
-    var speakingRaw = readSpeakingRaw();
     var speakingMark = readSpeakingMark(today);
     var hour = lisbonHour(new Date());
     var names;
@@ -1564,7 +1539,6 @@
       ["piano", "piano"],
       ["referee", "referee-games"],
       ["career", "career"],
-      ["speaking", "speaking"],
     ];
 
     jobs = names.map(function (pair) {
@@ -1580,7 +1554,7 @@
     jobs.push(fetchSpeakingPublic());
 
     Promise.all(jobs).then(function (results) {
-      var sources = { speakingRaw: speakingRaw, speakingMark: speakingMark };
+      var sources = { speakingMark: speakingMark };
       var failed = [];
       var report;
       var focus;
@@ -1590,11 +1564,6 @@
         if (result.key === "speakingPublic") {
           sources.speakingCatalog = result.data && result.data.catalog;
           sources.speakingPractice = result.data && result.data.practice;
-          return;
-        }
-        // A missing speaking.json must not blank the other checks.
-        if (result.key === "speaking") {
-          if (result.error) sources.speaking = null;
           return;
         }
         if (result.key === "referee") return;
