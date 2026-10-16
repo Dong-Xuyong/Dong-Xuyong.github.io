@@ -276,3 +276,25 @@ html.dark,
 :where(.dx-home, .dx-btn):active {
   transform: scale(0.98);
 }
+
+/* One class of specificity so app or dong-ui `a { color }` rules don't
+   repaint links styled as kit controls. */
+:where(a).dx-btn {
+  color: var(--dx-accent-fg);
+  text-decoration: none;
+}
+
+:where(a).dx-btn--ghost,
+:where(a).dx-home {
+  color: var(--dx-text);
+  text-decoration: none;
+}
+
+:where(a).dx-tab {
+  color: var(--dx-muted);
+  text-decoration: none;
+}
+
+.dx-tab:where([aria-current="page"], [aria-selected="true"]) {
+  color: var(--dx-accent);
+}
