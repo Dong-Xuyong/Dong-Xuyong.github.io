@@ -160,4 +160,10 @@ assert.ok(next);
 assert.ok(next.detail.indexOf("Soon x Team") !== -1);
 assert.strictEqual(next.badge, "tomorrow");
 
+// 9. Piano practice opens the log route.
+var piano = itemById(Hub.missingItems(baseSources(), today, 12).items, "piano");
+assert.ok(piano);
+assert.strictEqual(piano.label, "Piano practice");
+assert.strictEqual(piano.href, "/piano/#/log");
+
 console.log("hub.test.js: ok");
