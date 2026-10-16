@@ -50,6 +50,8 @@
       return;
     }
     metas.forEach(function (meta) {
+      // Hub pins theme-color to the night-sky background.
+      if (meta.hasAttribute("data-dong-theme-fixed")) return;
       meta.setAttribute("content", color);
       meta.removeAttribute("media");
     });

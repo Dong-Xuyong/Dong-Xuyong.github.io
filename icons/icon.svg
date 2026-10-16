@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Dong apps</title>
+  <!-- Maskable PNGs scale #mark by 0.73 about the center so the tiles stay inside the 80% safe circle. -->
+  <rect width="512" height="512" fill="#021037"/>
+  <g id="mark">
+    <rect x="48" y="48" width="176" height="176" rx="56" fill="#F2A93B"/>
+    <rect x="288" y="48" width="176" height="176" rx="56" fill="#4C6EF5"/>
+    <rect x="48" y="288" width="176" height="176" rx="56" fill="#2FB872"/>
+    <rect x="288" y="288" width="176" height="176" rx="56" fill="#8B5CF6"/>
+  </g>
+</svg>

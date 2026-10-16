@@ -3,15 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#f6f4ef" />
-  <title>Dong Apps</title>
+  <meta name="theme-color" content="#021037" data-dong-theme-fixed />
+  <title>Dong apps</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="/icons/favicon-16.png" type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
   <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dong-ui/theme.css?v=5" />
   <link rel="stylesheet" href="styles.css?v=16" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
-  <script src="dong-ui/theme.js"></script>
+  <style>
+    .boot {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      background: #021037;
+      pointer-events: none;
+    }
+    .boot svg { width: 112px; height: 112px; display: block; }
+    .boot.is-out { animation: boot-fade 600ms linear forwards; }
+    @keyframes boot-fade {
+      0% { opacity: 1; }
+      40% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .boot { display: none; }
+    }
+  </style>
+  <script src="dong-ui/theme.js?v=6"></script>
 </head>
 <body>
+  <div class="boot" aria-hidden="true">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="112" height="112" aria-hidden="true">
+      <rect width="512" height="512" fill="#021037"/>
+      <rect x="48" y="48" width="176" height="176" rx="56" fill="#F2A93B"/>
+      <rect x="288" y="48" width="176" height="176" rx="56" fill="#4C6EF5"/>
+      <rect x="48" y="288" width="176" height="176" rx="56" fill="#2FB872"/>
+      <rect x="288" y="288" width="176" height="176" rx="56" fill="#8B5CF6"/>
+    </svg>
+  </div>
   <main>
     <header class="greet">
       <img class="greet-banner" src="assets/art/banner.webp" alt="" width="1200" height="400" />
@@ -129,5 +162,21 @@
   </main>
   <script src="dong-ui/gh-sync.js?v=1"></script>
   <script src="hub.js?v=12"></script>
+  <script>
+    (function () {
+      var el = document.querySelector(".boot");
+      if (!el) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        el.remove();
+        return;
+      }
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          el.classList.add("is-out");
+          el.addEventListener("animationend", function () { el.remove(); });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
