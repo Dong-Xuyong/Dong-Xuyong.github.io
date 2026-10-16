@@ -166,4 +166,188 @@ assert.ok(piano);
 assert.strictEqual(piano.label, "Piano practice");
 assert.strictEqual(piano.href, "/piano/#/log");
 
+// 10. Merged Health hrefs.
+var merged = Hub.missingItems(baseSources(), today, 20).items;
+assert.strictEqual(itemById(merged, "meals").href, "/health/nutrition/#" + today);
+assert.strictEqual(itemById(merged, "training").href, "/health/training/");
+assert.strictEqual(itemById(Hub.missingItems(withMeal, today, 12).items, "food").href, "/health/nutrition/");
+assert.strictEqual(itemById(merged, "speaking").href, "/speaking-analysis/");
+assert.strictEqual(itemById(merged, "wiki"), null);
+
+// 11. Greeting from the Lisbon hour.
+assert.strictEqual(Hub.greeting(5), "Good morning");
+assert.strictEqual(Hub.greeting(11), "Good morning");
+assert.strictEqual(Hub.greeting(4), "Good evening");
+assert.strictEqual(Hub.greeting(12), "Good afternoon");
+assert.strictEqual(Hub.greeting(17), "Good afternoon");
+assert.strictEqual(Hub.greeting(18), "Good evening");
+assert.strictEqual(Hub.greeting(0), "Good evening");
+assert.strictEqual(Hub.greeting(23), "Good evening");
+
+// 12. Focus pick follows the priority, with morning before noon and evening from 18:00.
+function fake(id) {
+  return { id: id, label: id, href: "/", badge: "open" };
+}
+var pile = [
+  fake("food"),
+  fake("evening"),
+  fake("habits"),
+  fake("piano"),
+  fake("speaking"),
+  fake("chinese"),
+  fake("wiki"),
+  fake("meals"),
+  fake("training"),
+  fake("morning"),
+  fake("next-game"),
+];
+assert.strictEqual(Hub.focusItem(pile, 9).id, "morning");
+assert.strictEqual(Hub.focusItem(pile, 11).id, "morning");
+assert.strictEqual(Hub.focusItem(pile, 12).id, "training");
+assert.strictEqual(Hub.focusItem(pile, 14).id, "training");
+assert.strictEqual(Hub.focusItem(pile, 20).id, "training");
+assert.strictEqual(Hub.focusItem([fake("morning"), fake("evening"), fake("food")], 20).id, "evening");
+assert.strictEqual(Hub.focusItem([fake("morning"), fake("evening"), fake("food")], 14).id, "food");
+assert.strictEqual(Hub.focusItem([fake("evening"), fake("food")], 17).id, "food");
+assert.strictEqual(Hub.focusItem([fake("morning")], 14), null);
+assert.strictEqual(Hub.focusItem([fake("next-game")], 9), null);
+assert.strictEqual(Hub.focusItem([], 9), null);
+assert.strictEqual(Hub.focusItem(Hub.missingItems(baseSources(), today, 9).items, 9).id, "morning");
+assert.strictEqual(Hub.focusItem(Hub.missingItems(baseSources(), today, 14).items, 14).id, "training");
+assert.strictEqual(Hub.focusItem(Hub.missingItems(baseSources(), today, 20).items, 20).id, "training");
+
+// 13. Alert groups keep area order and drop empty ones.
+var grouped = Hub.groupItems(pile);
+assert.deepStrictEqual(grouped.map(function (group) { return group.area; }), [
+  "Journal",
+  "Health",
+  "Study",
+  "Mandarin",
+  "Practice",
+  "Referee",
+]);
+assert.strictEqual(grouped[0].items.length, 3);
+assert.deepStrictEqual(Hub.groupItems([fake("wiki"), fake("unknown-app")]).map(function (group) {
+  return group.area;
+}), ["Study"]);
+assert.deepStrictEqual(Hub.groupItems([]), []);
+assert.strictEqual(Hub.alertHeadline("Health", 2), "Health · 2 open");
+assert.strictEqual(Hub.AREA_OF.training, "Health");
+assert.strictEqual(Hub.AREA_OF.chinese, "Mandarin");
+assert.strictEqual(Hub.AREA_OF["next-game"], "Referee");
+
+// 14. Missions collapse into Admin then Crew. Within 3 days is urgent.
+assert.strictEqual(Hub.MISSIONS[0].area, "Admin");
+assert.strictEqual(Hub.MISSIONS[1].area, "Admin");
+assert.strictEqual(crew[0].area, "Crew");
+var missionRows = Hub.activeMissions(today, crew);
+var missionGroups = Hub.groupMissions(missionRows);
+assert.deepStrictEqual(missionGroups.map(function (group) { return group.area; }), ["Admin", "Crew"]);
+assert.ok(missionGroups[0].items.length >= 2);
+assert.strictEqual(missionGroups[1].items.length, 3);
+assert.strictEqual(Hub.missionHeadline(Hub.activeMissions(today)), "Missions · 2 · next in 11d");
+assert.strictEqual(Hub.missionUrgent(Hub.activeMissions(today)), false);
+assert.strictEqual(Hub.missionUrgent([{ days: 3 }, { days: 11 }]), true);
+assert.strictEqual(Hub.missionUrgent([{ days: 4 }]), false);
+assert.strictEqual(Hub.missionUrgent([{ days: -1 }]), true);
+assert.strictEqual(Hub.missionHeadline([{ days: 0 }, { days: 4 }]), "Missions · 2 · today");
+assert.strictEqual(Hub.missionHeadline([{ days: -2 }]), "Missions · 1 · overdue");
+assert.deepStrictEqual(Hub.groupMissions(crew.map(function (row) {
+  return { label: row.label, due: row.due, days: 1, area: row.area };
+})).map(function (group) { return group.area; }), ["Crew"]);
+
+// 15. Active applications ignore saved and closed. A missing file is null.
+assert.strictEqual(Hub.careerActive(null), null);
+assert.strictEqual(Hub.careerActive(undefined), null);
+assert.strictEqual(Hub.careerActive({}), null);
+assert.strictEqual(Hub.careerActive({ jobs: [] }), 0);
+assert.strictEqual(Hub.careerActive({
+  jobs: [
+    { stage: "saved" },
+    { stage: "applied" },
+    { stage: "screening" },
+    { stage: "interview" },
+    { stage: "offer" },
+    { stage: "closed" },
+    { stage: "nope" },
+    null,
+  ],
+}), 4);
+
+// 16. Tile counts, and a failed career read does not blank the other checks.
+var openReport = Hub.missingItems(baseSources(), today, 9);
+var openCounts = Hub.tileCounts(baseSources(), openReport, today);
+assert.strictEqual(openCounts.journal, "2 open");
+assert.strictEqual(openCounts.study, "—");
+assert.strictEqual(openCounts.health, "open");
+assert.strictEqual(openCounts.career, "—");
+assert.strictEqual(openCounts.mandarin, "—");
+assert.strictEqual(openCounts.referee, "—");
+var counted = baseSources();
+counted.career = { jobs: [{ stage: "applied" }, { stage: "saved" }, { stage: "closed" }] };
+counted.wiki = { cards: { a: { due: "2026-10-16", reps: 1, st: "learning" } } };
+counted.referee = { games: [{ date: "2026-10-19", home: "A", away: "B", time: "15:00" }] };
+var countedReport = Hub.missingItems(counted, today, 9);
+var countedTiles = Hub.tileCounts(counted, countedReport, today);
+assert.strictEqual(countedTiles.career, "1");
+assert.strictEqual(countedTiles.study, "1 left");
+assert.strictEqual(countedTiles.referee, "3d");
+assert.strictEqual(Hub.tileCounts(withMeal, Hub.missingItems(withMeal, today, 12), today).health, "1650 kcal");
+counted.careerError = true;
+assert.strictEqual(Hub.tileCounts(counted, countedReport, today).career, "—");
+assert.strictEqual(Hub.tileCounts(counted, countedReport, today).journal, "2 open");
+var careerFail = baseSources();
+careerFail.careerError = true;
+assert.strictEqual(Hub.missingItems(careerFail, today, 12).unknown, false);
+careerFail.journalError = true;
+assert.strictEqual(Hub.missingItems(careerFail, today, 12).unknown, true);
+
+// 17. All apps lists every kept href, hides the two removed apps, and starts collapsed.
+var fs = require("fs");
+var html = fs.readFileSync(require("path").join(__dirname, "index.html"), "utf8");
+var hubSrc = fs.readFileSync(require("path").join(__dirname, "hub.js"), "utf8");
+[
+  "/wiki-flashcards/",
+  "/wiki-flashcards/#/aws",
+  "/wiki-flashcards/insights/",
+  "/health/",
+  "/health/training/",
+  "/health/nutrition/",
+  "/career/",
+  "/speaking-analysis/",
+  "/job-hunt/",
+  "/Resume/",
+  "/journal/",
+  "/mirror/",
+  "/chinese-library/",
+  "/piano/",
+  "/thesis/",
+  "/money/",
+  "/crew-log/",
+  "/referee-games/",
+  "/roadmap/",
+  "/last30days-archive/",
+  "/afbraga-flashcards/",
+  "/wiki-library/",
+  "/law-wiki/",
+].forEach(function (href) {
+  assert.ok(html.indexOf('href="' + href + '"') !== -1, href);
+});
+assert.strictEqual(html.indexOf("/summer-outfits-2026/"), -1);
+assert.strictEqual(html.indexOf("/gsi-study/"), -1);
+["journal", "study", "health", "career", "mandarin", "referee"].forEach(function (name) {
+  assert.ok(html.indexOf('data-tile="' + name + '"') !== -1, name);
+});
+assert.ok(html.indexOf('data-tile="study" href="/wiki-flashcards/"') !== -1);
+assert.ok(html.indexOf('data-tile="health" href="/health/"') !== -1);
+assert.ok(html.indexOf('data-tile="career" href="/career/"') !== -1);
+var detailTags = html.match(/<details\b[^>]*>/gi) || [];
+assert.ok(detailTags.length >= 1);
+detailTags.forEach(function (tag) {
+  assert.ok(!/\sopen(\s|=|>)/.test(tag + ">"), tag);
+});
+assert.strictEqual(hubSrc.indexOf(".open = true"), -1);
+assert.strictEqual(hubSrc.indexOf('setAttribute("open"'), -1);
+assert.strictEqual(hubSrc.indexOf("setAttribute('open'"), -1);
+
 console.log("hub.test.js: ok");

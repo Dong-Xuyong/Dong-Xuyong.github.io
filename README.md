@@ -15,4 +15,4 @@ python scripts/sync_apps_hub.py
 
 ## Add an app
 
-Add a row under the collapsed More list in `index.html`. Journal stays the only large card. Deadline rows live in the `MISSIONS` array in `hub.js`. Then run the sync script.
+Add a link under the matching group in the collapsed All apps list in `index.html`: Study, Health, Career, Daily, Life, or Reference. Deadline rows live in the `MISSIONS` array in `hub.js` with `area: "Admin"`. Then run the sync script.

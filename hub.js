@@ -6,8 +6,8 @@
   "use strict";
 
   var MISSIONS = [
-    { label: "Renew AF Braga referee medical exam (EMD)", due: "2026-10-28" },
-    { label: "Car IMT inspection (91-GQ-02)", due: "2026-10-27" },
+    { label: "Renew AF Braga referee medical exam (EMD)", due: "2026-10-28", area: "Admin" },
+    { label: "Car IMT inspection (91-GQ-02)", due: "2026-10-27", area: "Admin" },
   ];
 
   // Used only when journal.json has no usable habitDefs. Same ids as Journal.
@@ -72,6 +72,16 @@
     return hour;
   }
 
+  // 5–11 morning, 12–17 afternoon, otherwise evening. Hour is a Lisbon hour.
+  function greeting(hour) {
+    var h = hour;
+    if (typeof h !== "number" || !isFinite(h)) h = lisbonHour(new Date());
+    if (h === 24) h = 0;
+    if (h >= 5 && h <= 11) return "Good morning";
+    if (h >= 12 && h <= 17) return "Good afternoon";
+    return "Good evening";
+  }
+
   function todayKey(now) {
     return lisbonDay(now || new Date());
   }
@@ -102,6 +112,7 @@
       left = daysLeft(today, mission.due);
       if (left == null) return;
       row = { label: mission.label, due: mission.due, days: left };
+      if (typeof mission.area === "string" && mission.area) row.area = mission.area;
       if (typeof mission.href === "string" && mission.href) row.href = mission.href;
       rows.push(row);
     });
@@ -139,7 +150,7 @@
       if (job.status === "complete" || job.status === "cancelled" || job.status === "done") continue;
       label = title.replace(/^\d{4}-\d{2}-\d{2} /, "");
       if (!label) label = title;
-      out.push({ label: label, due: due, href: "/crew-log/" });
+      out.push({ label: label, due: due, href: "/crew-log/", area: "Crew" });
     }
     return out;
   }
@@ -612,7 +623,7 @@
     if (Math.round(leftCal) <= 0 && Math.round(leftP) <= 0 && Math.round(leftC) <= 0 && Math.round(leftF) <= 0) {
       return null;
     }
-    row = item("food", Math.max(0, Math.round(leftCal)) + " kcal", "Food left", "/nutrition/");
+    row = item("food", Math.max(0, Math.round(leftCal)) + " kcal", "Food left", "/health/nutrition/");
     row.detail = "Left: " + [macroBit("P", leftP), macroBit("C", leftC), macroBit("F", leftF)].join(" · ");
     return row;
   }
@@ -729,7 +740,7 @@
 
     if (sources.nutritionError) unknown = true;
     else if (!mealsLogged(sources.nutrition, today)) {
-      items.push(item("meals", "open", "Meals not logged", "/nutrition/#" + today));
+      items.push(item("meals", "open", "Meals not logged", "/health/nutrition/#" + today));
     }
 
     if (!sources.nutritionError && mealsLogged(sources.nutrition, today)) {
@@ -741,7 +752,7 @@
     else if (!trainingLogged(sources.streetlifting, today)) {
       nutDay = sources.nutritionError ? null : nutritionDay(sources.nutrition, today);
       if (!(nutDay && normalizeDayType(nutDay.dayType) === "rest")) {
-        items.push(item("training", "open", "Training not logged", "/streetlifting/"));
+        items.push(item("training", "open", "Training not logged", "/health/training/"));
       }
     }
 
@@ -785,6 +796,228 @@
     return { items: items, unknown: unknown };
   }
 
+  var AREA_OF = {
+    morning: "Journal",
+    evening: "Journal",
+    habits: "Journal",
+    meals: "Health",
+    food: "Health",
+    training: "Health",
+    wiki: "Study",
+    chinese: "Mandarin",
+    speaking: "Practice",
+    piano: "Practice",
+    "next-game": "Referee",
+  };
+
+  var AREA_ORDER = ["Journal", "Health", "Study", "Mandarin", "Practice", "Referee"];
+
+  // Morning is the focus only before noon. Evening joins the list from 18:00,
+  // matching missingItems. Anything else in this list is always eligible.
+  var FOCUS_IDS = [
+    "morning",
+    "training",
+    "meals",
+    "wiki",
+    "chinese",
+    "speaking",
+    "piano",
+    "habits",
+    "evening",
+    "food",
+  ];
+
+  var MISSION_AREAS = ["Admin", "Crew"];
+
+  function groupByArea(rows, areaOf, order) {
+    var buckets = {};
+    var seen = order.slice();
+    var out = [];
+    if (!Array.isArray(rows)) return [];
+    rows.forEach(function (row) {
+      var area = areaOf(row);
+      if (!area) return;
+      if (!buckets[area]) buckets[area] = [];
+      buckets[area].push(row);
+      if (seen.indexOf(area) === -1) seen.push(area);
+    });
+    seen.forEach(function (area) {
+      if (buckets[area] && buckets[area].length) out.push({ area: area, items: buckets[area] });
+    });
+    return out;
+  }
+
+  function groupItems(items) {
+    return groupByArea(items, function (row) {
+      if (!row || typeof row.id !== "string") return "";
+      return AREA_OF[row.id] || "";
+    }, AREA_ORDER);
+  }
+
+  function focusItem(items, hour) {
+    var byId = {};
+    var h = typeof hour === "number" && isFinite(hour) ? hour : null;
+    var i;
+    var id;
+    if (!Array.isArray(items)) return null;
+    for (i = 0; i < items.length; i++) {
+      if (items[i] && typeof items[i].id === "string" && !byId[items[i].id]) byId[items[i].id] = items[i];
+    }
+    for (i = 0; i < FOCUS_IDS.length; i++) {
+      id = FOCUS_IDS[i];
+      if (!byId[id]) continue;
+      if (id === "morning" && !(h != null && h < 12)) continue;
+      if (id === "evening" && !(h == null || h >= 18)) continue;
+      return byId[id];
+    }
+    return null;
+  }
+
+  function groupMissions(rows) {
+    return groupByArea(rows, function (row) {
+      if (!row || typeof row.area !== "string") return "";
+      return row.area;
+    }, MISSION_AREAS);
+  }
+
+  function alertHeadline(area, count) {
+    return area + " · " + count + " open";
+  }
+
+  function missionHeadline(rows) {
+    var next;
+    var when;
+    if (!Array.isArray(rows) || !rows.length) return "";
+    next = rows[0];
+    if (next.days < 0) when = "overdue";
+    else if (next.days === 0) when = "today";
+    else when = "next in " + next.days + "d";
+    return "Missions · " + rows.length + " · " + when;
+  }
+
+  function missionUrgent(rows) {
+    var i;
+    if (!Array.isArray(rows)) return false;
+    for (i = 0; i < rows.length; i++) {
+      if (rows[i] && typeof rows[i].days === "number" && rows[i].days <= 3) return true;
+    }
+    return false;
+  }
+
+  var ACTIVE_STAGES = { applied: true, screening: true, interview: true, offer: true };
+
+  // Null when the career file is missing. saved and closed do not count.
+  function careerActive(file) {
+    var jobs;
+    var n = 0;
+    var i;
+    var stage;
+    if (!isRecord(file) || !Array.isArray(file.jobs)) return null;
+    jobs = file.jobs;
+    for (i = 0; i < jobs.length; i++) {
+      if (!isRecord(jobs[i])) continue;
+      stage = jobs[i].stage;
+      if (typeof stage === "string" && ACTIVE_STAGES[stage]) n += 1;
+    }
+    return n;
+  }
+
+  function findItem(items, id) {
+    var i;
+    for (i = 0; i < items.length; i++) {
+      if (items[i] && items[i].id === id) return items[i];
+    }
+    return null;
+  }
+
+  function journalTile(sources, items) {
+    var n = 0;
+    var i;
+    var id;
+    if (!sources || sources.journalError) return "—";
+    for (i = 0; i < items.length; i++) {
+      id = items[i] && items[i].id;
+      if (id === "morning" || id === "evening" || id === "habits") n += 1;
+    }
+    return n ? n + " open" : "✓";
+  }
+
+  function cardsTile(sources, items, id, errKey, today) {
+    var file;
+    var row;
+    var due;
+    var reviewed;
+    var left;
+    if (!sources || sources[errKey]) return "—";
+    row = findItem(items, id);
+    if (row && row.badge) return String(row.badge) + " left";
+    file = id === "wiki" ? sources.wiki : sources.chinese;
+    due = id === "wiki" ? wikiDueCount(file, today) : chineseDueCount(file, today);
+    reviewed = id === "wiki" ? wikiReviewedToday(file, today) : chineseReviewedToday(file, today);
+    left = cardQuota(due, reviewed);
+    if (left == null) return "—";
+    if (left === 0) return "✓";
+    return String(left) + " left";
+  }
+
+  function healthTile(sources, items, today) {
+    var food;
+    var nutDay;
+    if (!sources || (sources.nutritionError && sources.streetError)) return "—";
+    food = findItem(items, "food");
+    if (food && food.badge) return food.badge;
+    if (!sources.streetError && trainingLogged(sources.streetlifting, today)) return "✓";
+    nutDay = sources.nutritionError ? null : nutritionDay(sources.nutrition, today);
+    if (nutDay && normalizeDayType(nutDay.dayType) === "rest") return "✓";
+    if (findItem(items, "training")) return "open";
+    if (sources.nutritionError || sources.streetError) return "—";
+    return "✓";
+  }
+
+  function careerTile(sources) {
+    var n;
+    if (!sources || sources.careerError) return "—";
+    n = careerActive(sources.career);
+    if (n == null) return "—";
+    return String(n);
+  }
+
+  function refereeTile(sources, today) {
+    var next;
+    var match;
+    if (!sources || sources.refereeError) return "—";
+    next = nextGameItem(sources.referee, today);
+    if (!next || !next.badge) return "—";
+    if (next.badge === "today") return "today";
+    if (next.badge === "tomorrow") return "1d";
+    match = /^in (\d+)d$/.exec(next.badge);
+    if (match) return match[1] + "d";
+    return "—";
+  }
+
+  function tileCounts(sources, report, today) {
+    var items = report && Array.isArray(report.items) ? report.items : [];
+    return {
+      journal: journalTile(sources, items),
+      study: cardsTile(sources, items, "wiki", "wikiError", today),
+      health: healthTile(sources, items, today),
+      career: careerTile(sources),
+      mandarin: cardsTile(sources, items, "chinese", "chineseError", today),
+      referee: refereeTile(sources, today),
+    };
+  }
+
+  function neutralTiles() {
+    return {
+      journal: "—",
+      study: "—",
+      health: "—",
+      career: "—",
+      mandarin: "—",
+      referee: "—",
+    };
+  }
+
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
@@ -792,10 +1025,30 @@
     return node;
   }
 
+  function shortDays(days) {
+    if (days === 0) return "today";
+    if (days === 1) return "1d";
+    if (days === -1) return "1d over";
+    if (days < 0) return (-days) + "d over";
+    return days + "d";
+  }
+
+  function lineRow(row, badgeText, soon) {
+    var line = row.href ? el("a", "line") : el("div", "line");
+    var text = row.label;
+    if (row.href) line.href = row.href;
+    if (row.detail) text += " · " + row.detail;
+    line.appendChild(el("span", "row-label", text));
+    if (badgeText) line.appendChild(el("span", "badge" + (soon ? " badge-soon" : ""), badgeText));
+    return line;
+  }
+
   function renderMissions(today, extra) {
     var host = document.getElementById("missions");
     var rows = activeMissions(today, extra);
-    var list;
+    var details;
+    var summary;
+    var groups;
     if (!host) return;
     host.textContent = "";
     if (!rows.length) {
@@ -803,82 +1056,108 @@
       return;
     }
     host.hidden = false;
-    host.appendChild(el("h2", "", "Missions"));
-    list = el("ul", "mission-list");
-    rows.forEach(function (row) {
-      var li = el("li");
-      var badge = el("span", "badge" + (row.days <= 3 ? " badge-soon" : ""), countdown(row.days));
-      var label;
-      li.appendChild(badge);
-      if (row.href) {
-        label = el("a", "row-label", row.label);
-        label.href = row.href;
-        li.appendChild(label);
-      } else {
-        li.appendChild(el("span", "row-label", row.label));
-      }
-      list.appendChild(li);
-    });
-    host.appendChild(list);
-  }
-
-  function renderToday(state) {
-    var host = document.getElementById("today-body");
-    var list;
-    var hint;
-    if (!host) return;
-    host.textContent = "";
-    host.removeAttribute("data-today");
-
-    if (!state.connected) {
-      hint = el("p", "sync-hint");
-      hint.appendChild(el("a", "", "Connect sync"));
-      hint.lastChild.href = "/journal/";
-      hint.appendChild(document.createTextNode(" to load today."));
-      host.appendChild(hint);
-      host.setAttribute("data-today", "hint");
-    }
-
-    if (state.loading) {
-      host.appendChild(el("p", "sync-hint", "Checking today…"));
-      host.setAttribute("data-today", "loading");
-      return;
-    }
-
-    if (state.note) host.appendChild(el("p", "sync-hint", state.note));
-
-    if (!state.items.length && state.connected && !state.unknown) {
-      host.appendChild(el("p", "all-done", "All done today"));
-      host.setAttribute("data-today", "done");
-      return;
-    }
-
-    if (!state.items.length && state.connected && state.unknown && !state.loading) {
-      host.setAttribute("data-today", "error");
-    }
-
-    if (state.items.length) {
-      list = el("ul", "today-list");
-      state.items.forEach(function (row) {
+    details = el("details", "sheet missions-details");
+    summary = el("summary", missionUrgent(rows) ? "is-soon" : "");
+    summary.appendChild(el("span", "row-label", missionHeadline(rows)));
+    details.appendChild(summary);
+    groups = groupMissions(rows);
+    groups.forEach(function (group) {
+      var block = el("div", "area-block");
+      var list = el("ul", "line-list");
+      block.appendChild(el("h3", "area-label", group.area));
+      group.items.forEach(function (row) {
         var li = el("li");
-        var link = el("a", "today-link");
-        var label;
-        link.href = row.href;
-        if (row.badge) link.appendChild(el("span", "badge", row.badge));
-        if (row.detail) {
-          label = el("span", "row-label");
-          label.appendChild(document.createTextNode(row.label));
-          label.appendChild(document.createElement("br"));
-          label.appendChild(document.createTextNode(row.detail));
-          link.appendChild(label);
-        } else {
-          link.appendChild(el("span", "row-label", row.label));
-        }
-        li.appendChild(link);
+        li.appendChild(lineRow(row, shortDays(row.days), row.days <= 3));
         list.appendChild(li);
       });
-      host.appendChild(list);
-      if (host.getAttribute("data-today") !== "hint") host.setAttribute("data-today", "open");
+      block.appendChild(list);
+      details.appendChild(block);
+    });
+    host.appendChild(details);
+  }
+
+  function renderFocus(state) {
+    var host = document.getElementById("focus");
+    var card;
+    if (!host) return;
+    host.textContent = "";
+    host.removeAttribute("data-focus");
+    if (!state.connected) {
+      card = el("a", "focus-card");
+      card.href = "/journal/";
+      card.appendChild(el("span", "row-label", "Connect sync"));
+      card.appendChild(el("span", "go", "Go"));
+      host.appendChild(card);
+      host.setAttribute("data-focus", "connect");
+      return;
+    }
+    if (state.loading) {
+      host.appendChild(el("p", "sync-hint", "Checking today…"));
+      host.setAttribute("data-focus", "loading");
+      return;
+    }
+    if (state.note) host.appendChild(el("p", "sync-hint", state.note));
+    if (state.focus) {
+      card = el("a", "focus-card");
+      card.href = state.focus.href;
+      card.appendChild(lineLabel(state.focus));
+      if (state.focus.badge) card.appendChild(el("span", "badge", state.focus.badge));
+      card.appendChild(el("span", "go", "Go"));
+      host.appendChild(card);
+      host.setAttribute("data-focus", state.focus.id);
+      return;
+    }
+    if (!state.unknown) {
+      host.appendChild(el("p", "focus-card focus-done", "All done today"));
+      host.setAttribute("data-focus", "done");
+      return;
+    }
+    host.setAttribute("data-focus", "error");
+  }
+
+  function lineLabel(row) {
+    var text = row.label;
+    if (row.detail) text += " · " + row.detail;
+    return el("span", "row-label", text);
+  }
+
+  function renderAlerts(items) {
+    var host = document.getElementById("alerts");
+    var groups;
+    if (!host) return;
+    host.textContent = "";
+    groups = groupItems(items || []);
+    groups.forEach(function (group) {
+      var details = el("details", "sheet alert-group");
+      var summary = el("summary");
+      var list = el("ul", "line-list");
+      details.setAttribute("data-area", group.area);
+      summary.appendChild(el("span", "row-label", alertHeadline(group.area, group.items.length)));
+      details.appendChild(summary);
+      group.items.forEach(function (row) {
+        var li = el("li");
+        li.appendChild(lineRow(row, row.badge, false));
+        list.appendChild(li);
+      });
+      details.appendChild(list);
+      host.appendChild(details);
+    });
+  }
+
+  function renderTiles(counts) {
+    var nodes;
+    var i;
+    var node;
+    var key;
+    var slot;
+    if (!counts || typeof document === "undefined") return;
+    nodes = document.querySelectorAll("[data-tile]");
+    for (i = 0; i < nodes.length; i++) {
+      node = nodes[i];
+      key = node.getAttribute("data-tile");
+      slot = node.querySelector(".tile-count");
+      if (!slot || !Object.prototype.hasOwnProperty.call(counts, key)) continue;
+      slot.textContent = counts[key];
     }
   }
 
@@ -895,25 +1174,16 @@
     var cfg = root.GhSync && root.GhSync.readConfig ? root.GhSync.readConfig() : null;
     var speakingRaw = readSpeakingRaw();
     var hour = lisbonHour(new Date());
+    var names;
     if (!cfg) {
-      var offline = missingItems(
-        {
-          speakingRaw: speakingRaw,
-          journalError: true,
-          nutritionError: true,
-          streetError: true,
-          wikiError: true,
-          chineseError: true,
-          pianoError: true,
-        },
-        today,
-        hour
-      );
-      renderToday({ connected: false, items: offline.items, unknown: true });
+      renderFocus({ connected: false });
+      renderAlerts([]);
+      renderTiles(neutralTiles());
       return;
     }
 
-    renderToday({ connected: true, loading: true, items: [], unknown: true });
+    renderFocus({ connected: true, loading: true });
+    renderAlerts([]);
 
     root.GhSync.fetchJson(cfg, "crew-log").then(
       function (data) {
@@ -922,7 +1192,7 @@
       function () {}
     );
 
-    var names = [
+    names = [
       ["journal", "journal"],
       ["nutrition", "nutrition"],
       ["streetlifting", "streetlifting"],
@@ -930,6 +1200,7 @@
       ["chinese", "chinese-library"],
       ["piano", "piano"],
       ["referee", "referee-games"],
+      ["career", "career"],
     ];
 
     Promise.all(
@@ -946,9 +1217,17 @@
     ).then(function (results) {
       var sources = { speakingRaw: speakingRaw };
       var failed = [];
+      var report;
+      var focus;
+      var alerts = [];
       results.forEach(function (result) {
         sources[result.key] = result.data;
         if (result.key === "referee") return;
+        // A failed career read must not mark the other checks unknown.
+        if (result.key === "career") {
+          sources.careerError = result.error;
+          return;
+        }
         if (result.key === "journal") sources.journalError = result.error;
         if (result.key === "nutrition") sources.nutritionError = result.error;
         if (result.key === "streetlifting") sources.streetError = result.error;
@@ -957,20 +1236,28 @@
         if (result.key === "piano") sources.pianoError = result.error;
         if (result.error) failed.push(result.key);
       });
-      var report = missingItems(sources, today, hour);
-      renderToday({
+      report = missingItems(sources, today, hour);
+      focus = focusItem(report.items, hour);
+      report.items.forEach(function (row) {
+        if (!focus || row.id !== focus.id) alerts.push(row);
+      });
+      renderFocus({
         connected: true,
-        items: report.items,
+        focus: focus,
         unknown: report.unknown,
         note: failed.length ? "Some logs could not be read." : "",
       });
+      renderAlerts(alerts);
+      renderTiles(tileCounts(sources, report, today));
     });
   }
 
   function boot() {
     var now = new Date();
     var today = todayKey(now);
+    var hello = document.getElementById("greet-hello");
     var date = document.getElementById("today-date");
+    if (hello) hello.textContent = greeting(lisbonHour(now));
     if (date) date.textContent = todayLabel(now);
     renderMissions(today);
     loadToday(today);
@@ -1000,6 +1287,16 @@
     pianoLogged: pianoLogged,
     nextGameItem: nextGameItem,
     habitsLeft: habitsLeft,
+    greeting: greeting,
+    AREA_OF: AREA_OF,
+    groupItems: groupItems,
+    focusItem: focusItem,
+    groupMissions: groupMissions,
+    careerActive: careerActive,
+    tileCounts: tileCounts,
+    alertHeadline: alertHeadline,
+    missionHeadline: missionHeadline,
+    missionUrgent: missionUrgent,
     boot: boot,
   };
 

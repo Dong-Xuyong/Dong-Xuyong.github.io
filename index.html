@@ -7,64 +7,99 @@
   <title>Dong Apps</title>
   <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dong-ui/theme.css?v=5" />
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
   <script src="dong-ui/theme.js"></script>
 </head>
 <body>
-  <button type="button" data-dong-theme-toggle aria-label="Toggle color theme"></button>
   <main>
-    <section class="today" aria-labelledby="today-title">
-      <div class="today-head">
-        <h1 id="today-title">Today</h1>
+    <header class="greet">
+      <div class="greet-text">
+        <h1 id="greet-title"><span id="greet-hello">Good morning</span>, Dong</h1>
         <p id="today-date"></p>
       </div>
-      <div id="today-body" aria-live="polite"></div>
-    </section>
+      <button type="button" data-dong-theme-toggle aria-label="Toggle color theme"></button>
+    </header>
 
+    <section id="focus" class="focus" aria-live="polite"></section>
+    <section id="alerts" class="alerts" aria-label="Alerts"></section>
     <section id="missions" class="missions" hidden></section>
 
-    <div class="features">
-      <a class="feature" href="/journal/">
-        <img src="icons/journal.jpg" alt="" />
-        <strong>Journal &amp; Reviews</strong>
+    <nav class="tiles" aria-label="Main apps">
+      <a class="tile" data-tile="journal" href="/journal/">
+        <span class="tile-name">Journal</span>
+        <span class="tile-count">—</span>
       </a>
-      <a class="feature" href="/wiki-insights/">
-        <img src="icons/wiki-insights.jpg" alt="" />
-        <strong>YouTube Wiki Insights</strong>
+      <a class="tile" data-tile="study" href="/wiki-flashcards/">
+        <span class="tile-name">Study</span>
+        <span class="tile-count">—</span>
       </a>
-    </div>
+      <a class="tile" data-tile="health" href="/health/">
+        <span class="tile-name">Health</span>
+        <span class="tile-count">—</span>
+      </a>
+      <a class="tile" data-tile="career" href="/career/">
+        <span class="tile-name">Career</span>
+        <span class="tile-count">—</span>
+      </a>
+      <a class="tile" data-tile="mandarin" href="/chinese-library/">
+        <span class="tile-name">Mandarin</span>
+        <span class="tile-count">—</span>
+      </a>
+      <a class="tile" data-tile="referee" href="/referee-games/">
+        <span class="tile-name">Referee</span>
+        <span class="tile-count">—</span>
+      </a>
+    </nav>
 
-    <details class="more">
-      <summary>More</summary>
-      <nav aria-label="More apps">
-        <a href="/wiki-flashcards/">Wiki Review Cards</a>
-        <a href="/wiki-flashcards/#/aws">AWS Cloud Practitioner</a>
-        <a href="/chinese-library/">Mandarin Vocabulary</a>
-        <a href="/streetlifting/">Streetlifting Log</a>
-        <a href="/nutrition/">Nutrition Tracker</a>
-        <a href="/health/">Health Log</a>
-        <a href="/money/">Money</a>
-        <a href="/crew-log/">Crew Log</a>
-        <a href="/mirror/">Morning Brief</a>
-        <a href="/speaking-analysis/">Speaking Coach Analysis</a>
-        <a href="/last30days-archive/">Research Archive (last30days)</a>
-        <a href="/afbraga-flashcards/">AF Braga Referee Study</a>
-        <a href="/Resume/">Resume</a>
-        <a href="/job-hunt/">GenAI Job Shortlist</a>
-        <a href="/career/">Career Pipeline</a>
-        <a href="/summer-outfits-2026/">Outfit Builder</a>
-        <a href="/piano/">Piano Practice</a>
-        <a href="/wiki-library/">Wiki Bookshelf</a>
-        <a href="/law-wiki/">Legal Research Wiki</a>
-        <a href="/gsi-study/">GSI Exam Mind Maps</a>
-        <a href="/roadmap/">Roadmap</a>
-        <a href="/thesis/">Thesis Tracker</a>
-        <a href="/referee-games/">Referee Games</a>
+    <details class="all-apps sheet">
+      <summary><span class="row-label">All apps</span></summary>
+      <nav aria-label="All apps">
+        <section>
+          <h2>Study</h2>
+          <a href="/wiki-flashcards/">Cards</a>
+          <a href="/wiki-flashcards/#/aws">AWS</a>
+          <a href="/wiki-flashcards/insights/">Insights</a>
+        </section>
+        <section>
+          <h2>Health</h2>
+          <a href="/health/">Health</a>
+          <a href="/health/training/">Training</a>
+          <a href="/health/nutrition/">Nutrition</a>
+        </section>
+        <section>
+          <h2>Career</h2>
+          <a href="/career/">Pipeline</a>
+          <a href="/speaking-analysis/">Speaking Coach</a>
+          <a href="/job-hunt/">GenAI Job Shortlist</a>
+          <a href="/Resume/">Resume</a>
+        </section>
+        <section>
+          <h2>Daily</h2>
+          <a href="/journal/">Journal &amp; Reviews</a>
+          <a href="/mirror/">Morning Brief</a>
+          <a href="/chinese-library/">Mandarin Vocabulary</a>
+          <a href="/piano/">Piano Practice</a>
+          <a href="/thesis/">Thesis Tracker</a>
+        </section>
+        <section>
+          <h2>Life</h2>
+          <a href="/money/">Money</a>
+          <a href="/crew-log/">Crew Log</a>
+          <a href="/referee-games/">Referee Games</a>
+          <a href="/roadmap/">Roadmap</a>
+        </section>
+        <section>
+          <h2>Reference</h2>
+          <a href="/last30days-archive/">Research Archive</a>
+          <a href="/afbraga-flashcards/">AF Braga Referee Study</a>
+          <a href="/wiki-library/">Wiki Bookshelf</a>
+          <a href="/law-wiki/">Legal Research Wiki</a>
+        </section>
       </nav>
     </details>
   </main>
   <script src="dong-ui/gh-sync.js?v=1"></script>
-  <script src="hub.js?v=6"></script>
+  <script src="hub.js?v=7"></script>
 </body>
 </html>
