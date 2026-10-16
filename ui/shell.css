@@ -96,8 +96,12 @@ html.dark,
 :where(body.dx) {
   font-family: var(--dx-font);
   color: var(--dx-text);
-  background-color: transparent;
   isolation: isolate;
+}
+
+/* One class of specificity: dong-ui's body { background } would hide the art. */
+body.dx {
+  background: transparent;
 }
 
 :where(body.dx)::before,
