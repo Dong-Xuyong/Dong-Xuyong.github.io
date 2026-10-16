@@ -171,8 +171,46 @@ p {
   box-shadow: 0 1px 8px hsl(0 0% 0% / 0.08);
 }
 
+.journal-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--area) 10%, hsl(var(--card)));
+  border: 1px solid var(--area-ink);
+  color: var(--area-ink);
+  min-width: 0;
+}
+
+.journal-art {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  object-fit: contain;
+}
+
+.journal-line {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
 .focus {
-  margin-top: 18px;
+  margin-top: 12px;
+}
+
+.focus:empty {
+  margin-top: 0;
 }
 
 .focus-card {
@@ -221,6 +259,7 @@ p {
 
 .focus-card .row-label,
 .line .row-label,
+.wiki-due .row-label,
 summary .row-label {
   flex: 1 1 auto;
   min-width: 0;
@@ -415,6 +454,24 @@ summary.is-soon::after {
   margin-top: 16px;
 }
 
+.wiki-due {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--area) 10%, hsl(var(--card)));
+  border: 1px solid var(--area-ink);
+  color: var(--area-ink);
+  min-width: 0;
+}
+
+.wiki-due[hidden] {
+  display: none;
+}
+
 .tile {
   display: flex;
   flex-direction: column;
@@ -470,6 +527,8 @@ summary.is-soon::after {
 }
 
 .focus-card:focus-visible,
+.journal-card:focus-visible,
+.wiki-due:focus-visible,
 .tile:focus-visible,
 .line:focus-visible,
 .all-apps a:focus-visible,
@@ -480,6 +539,8 @@ summary:focus-visible,
 }
 
 .focus-card:active,
+.journal-card:active,
+.wiki-due:active,
 .tile:active,
 .line:active,
 .all-apps a:active {

@@ -215,6 +215,14 @@ assert.strictEqual(Hub.focusItem([], 9), null);
 assert.strictEqual(Hub.focusItem(Hub.missingItems(baseSources(), today, 9).items, 9).id, "morning");
 assert.strictEqual(Hub.focusItem(Hub.missingItems(baseSources(), today, 14).items, 14).id, "training");
 assert.strictEqual(Hub.focusItem(Hub.missingItems(baseSources(), today, 20).items, 20).id, "training");
+assert.strictEqual(Hub.focusItem([fake("wiki")], 9), null);
+assert.strictEqual(Hub.focusItem([fake("wiki"), fake("meals")], 15).id, "meals");
+assert.strictEqual(Hub.focusItem([fake("wiki"), fake("morning")], 9).id, "morning");
+assert.strictEqual(Hub.focusItem([fake("wiki"), fake("chinese")], 14).id, "chinese");
+assert.strictEqual(Hub.hideDoneCard([fake("wiki")], 9), true);
+assert.strictEqual(Hub.hideDoneCard([fake("wiki"), fake("training")], 14), false);
+assert.strictEqual(Hub.hideDoneCard([fake("next-game")], 9), false);
+assert.strictEqual(Hub.hideDoneCard([], 9), false);
 
 // 13. Alert groups keep area order and drop empty ones.
 var grouped = Hub.groupItems(pile);
@@ -335,9 +343,10 @@ var hubSrc = fs.readFileSync(require("path").join(__dirname, "hub.js"), "utf8");
 });
 assert.strictEqual(html.indexOf("/summer-outfits-2026/"), -1);
 assert.strictEqual(html.indexOf("/gsi-study/"), -1);
-["journal", "study", "health", "career", "mandarin", "referee"].forEach(function (name) {
+["study", "health", "career", "mandarin", "referee"].forEach(function (name) {
   assert.ok(html.indexOf('data-tile="' + name + '"') !== -1, name);
 });
+assert.strictEqual(html.indexOf('data-tile="journal"'), -1);
 assert.ok(html.indexOf('data-tile="study" href="/wiki-flashcards/"') !== -1);
 assert.ok(html.indexOf('data-tile="health" href="/health/"') !== -1);
 assert.ok(html.indexOf('data-tile="career" href="/career/"') !== -1);
@@ -350,13 +359,12 @@ assert.strictEqual(hubSrc.indexOf(".open = true"), -1);
 assert.strictEqual(hubSrc.indexOf('setAttribute("open"'), -1);
 assert.strictEqual(hubSrc.indexOf("setAttribute('open'"), -1);
 
-// 18. Seventh tile is Wiki Insights, pinned in the first two, with art and accents.
+// 18. Wiki Insights stays in the first two after Journal leaves the grid.
 var tileOrder = [];
 var tileRe = /data-tile="([^"]+)"/g;
 var tileMatch;
 while ((tileMatch = tileRe.exec(html))) tileOrder.push(tileMatch[1]);
 assert.deepStrictEqual(tileOrder, [
-  "journal",
   "wiki-insights",
   "study",
   "health",
@@ -368,11 +376,12 @@ assert.ok(tileOrder.indexOf("wiki-insights") <= 1);
 assert.ok(html.indexOf('data-tile="wiki-insights" href="/wiki-flashcards/insights/"') !== -1);
 assert.ok(html.indexOf("assets/art/banner.webp") !== -1);
 assert.ok(html.indexOf("assets/art/wiki-insights.webp") !== -1);
+assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=13") !== -1);
-assert.ok(html.indexOf("hub.js?v=9") !== -1);
+assert.ok(html.indexOf("styles.css?v=14") !== -1);
+assert.ok(html.indexOf("hub.js?v=10") !== -1);
 var css = fs.readFileSync(require("path").join(__dirname, "styles.css"), "utf8");
 var palette = JSON.parse(fs.readFileSync(require("path").join(__dirname, "assets/art/palette.json"), "utf8"));
 Object.keys(palette).forEach(function (key) {
@@ -402,5 +411,56 @@ assert.strictEqual(Hub.rowVisual("speaking").area, "career");
 assert.strictEqual(Hub.rowVisual("speaking").emoji, "💼");
 assert.strictEqual(Hub.rowVisual({ id: "next-game" }).area, "referee");
 assert.strictEqual(Hub.rowVisual({ area: "Crew" }).emoji, "⚓");
+
+// 19. Journal card reads quotes[today].text and falls back with no error copy.
+assert.strictEqual(Hub.quoteOfDay(null, today), "");
+assert.strictEqual(Hub.quoteOfDay({}, today), "");
+assert.strictEqual(Hub.quoteOfDay({ quotes: null }, today), "");
+assert.strictEqual(Hub.quoteOfDay({ quotes: { "2026-10-16": "plain" } }, today), "");
+assert.strictEqual(Hub.quoteOfDay({ quotes: { "2026-10-16": { text: "" } } }, today), "");
+assert.strictEqual(Hub.quoteOfDay({ quotes: { "2026-10-16": { text: "   " } } }, today), "");
+assert.strictEqual(Hub.quoteOfDay({ quotes: { "2026-10-16": { text: 3 } } }, today), "");
+assert.strictEqual(Hub.quoteOfDay({ quotes: { "2026-10-15": { text: "Yesterday" } } }, today), "");
+assert.strictEqual(Hub.quoteOfDay({ quotes: { "2026-10-16": { text: "  Stay.\nToday.  " } } }, today), "Stay. Today.");
+assert.strictEqual(Hub.journalCardText(null, today), "Journal · write today");
+assert.strictEqual(Hub.journalCardText({ quotes: {} }, today), "Journal · write today");
+assert.strictEqual(Hub.journalCardText({ quotes: { "2026-10-16": { text: "Stay." } } }, today), "Stay.");
+assert.ok(html.indexOf('id="journal-card"') !== -1);
+assert.ok(html.indexOf('class="journal-card"') !== -1);
+assert.ok(html.indexOf('data-area="journal"') !== -1);
+assert.ok(html.indexOf("Journal · write today") !== -1);
+assert.ok(html.indexOf('id="journal-card"') < html.indexOf('id="focus"'));
+var journalCardHtml = html.slice(html.indexOf('id="journal-card"'), html.indexOf('id="focus"'));
+assert.strictEqual(journalCardHtml.indexOf("Journal · write today"), journalCardHtml.lastIndexOf("Journal · write today"));
+assert.ok(journalCardHtml.indexOf("error") === -1);
+
+// 20. Wiki due leaves the focus card and sits under Study.
+var wikiSources = baseSources();
+wikiSources.wiki = { cards: { a: { due: "2026-10-16", reps: 1, st: "learning" } } };
+var wikiItems = Hub.missingItems(wikiSources, today, 14).items;
+var wikiRow = itemById(wikiItems, "wiki");
+assert.ok(wikiRow);
+assert.strictEqual(wikiRow.label, "Wiki cards: 1 to do");
+assert.strictEqual(wikiRow.badge, "1");
+assert.strictEqual(wikiRow.href, "/wiki-flashcards/");
+assert.strictEqual(Hub.focusItem(wikiItems, 14).id, "training");
+assert.strictEqual(Hub.hideDoneCard(wikiItems, 14), false);
+var wikiOnly = [wikiRow];
+assert.strictEqual(Hub.focusItem(wikiOnly, 14), null);
+assert.strictEqual(Hub.hideDoneCard(wikiOnly, 14), true);
+assert.ok(html.indexOf('id="wiki-due"') !== -1);
+assert.ok(html.indexOf('class="wiki-due"') !== -1);
+assert.ok(html.indexOf('id="wiki-due" href="/wiki-flashcards/"') !== -1);
+assert.ok(html.indexOf('id="wiki-due" href="/wiki-flashcards/" data-area="study"') !== -1);
+assert.ok(html.indexOf('data-tile="study"') < html.indexOf('id="wiki-due"'));
+assert.ok(html.indexOf('id="wiki-due"') < html.indexOf('data-tile="health"'));
+function cssRule(source, selector) {
+  var at = source.indexOf(selector);
+  assert.ok(at !== -1, selector);
+  return source.slice(at, at + 500);
+}
+assert.ok(cssRule(css, ".journal-card {").indexOf("min-height: 44px") !== -1);
+assert.ok(cssRule(css, ".wiki-due {").indexOf("min-height: 44px") !== -1);
+assert.ok(cssRule(css, ".wiki-due {").indexOf("grid-column: 1 / -1") !== -1);
 
 console.log("hub.test.js: ok");
