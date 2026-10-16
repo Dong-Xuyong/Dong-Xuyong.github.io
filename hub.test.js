@@ -350,4 +350,57 @@ assert.strictEqual(hubSrc.indexOf(".open = true"), -1);
 assert.strictEqual(hubSrc.indexOf('setAttribute("open"'), -1);
 assert.strictEqual(hubSrc.indexOf("setAttribute('open'"), -1);
 
+// 18. Seventh tile is Wiki Insights, pinned in the first two, with art and accents.
+var tileOrder = [];
+var tileRe = /data-tile="([^"]+)"/g;
+var tileMatch;
+while ((tileMatch = tileRe.exec(html))) tileOrder.push(tileMatch[1]);
+assert.deepStrictEqual(tileOrder, [
+  "journal",
+  "wiki-insights",
+  "study",
+  "health",
+  "career",
+  "mandarin",
+  "referee",
+]);
+assert.ok(tileOrder.indexOf("wiki-insights") <= 1);
+assert.ok(html.indexOf('data-tile="wiki-insights" href="/wiki-flashcards/insights/"') !== -1);
+assert.ok(html.indexOf("assets/art/banner.webp") !== -1);
+assert.ok(html.indexOf("assets/art/wiki-insights.webp") !== -1);
+assert.ok(html.indexOf('width="52"') !== -1);
+assert.ok(html.indexOf('height="52"') !== -1);
+assert.ok(html.indexOf('loading="lazy"') !== -1);
+assert.ok(html.indexOf("styles.css?v=11") !== -1);
+assert.ok(html.indexOf("hub.js?v=8") !== -1);
+var css = fs.readFileSync(require("path").join(__dirname, "styles.css"), "utf8");
+var palette = JSON.parse(fs.readFileSync(require("path").join(__dirname, "assets/art/palette.json"), "utf8"));
+Object.keys(palette).forEach(function (key) {
+  assert.ok(css.indexOf("--area-" + key + ": " + palette[key]) !== -1, key);
+  assert.ok(fs.existsSync(require("path").join(__dirname, "assets/art", key + ".webp")), key);
+});
+assert.ok(css.indexOf("object-fit: cover") !== -1);
+assert.ok(css.indexOf("object-position: center") !== -1);
+function aroundHref(href) {
+  var at = html.indexOf('href="' + href + '"');
+  assert.ok(at !== -1, href);
+  return html.slice(Math.max(0, at - 120), at + href.length + 160);
+}
+assert.ok(aroundHref("/health/training/").indexOf('data-area="health"') !== -1);
+assert.ok(aroundHref("/health/nutrition/").indexOf('data-area="health"') !== -1);
+assert.ok(aroundHref("/health/training/").indexOf("💚") !== -1);
+assert.ok(aroundHref("/health/nutrition/").indexOf("💚") !== -1);
+assert.ok(aroundHref("/job-hunt/").indexOf('data-area="career"') !== -1);
+assert.ok(aroundHref("/Resume/").indexOf('data-area="career"') !== -1);
+assert.ok(aroundHref("/speaking-analysis/").indexOf('data-area="career"') !== -1);
+assert.ok(aroundHref("/job-hunt/").indexOf("💼") !== -1);
+assert.ok(aroundHref("/Resume/").indexOf("💼") !== -1);
+assert.strictEqual(Hub.rowVisual("training").area, "health");
+assert.strictEqual(Hub.rowVisual("food").area, "health");
+assert.strictEqual(Hub.rowVisual("meals").emoji, Hub.rowVisual("training").emoji);
+assert.strictEqual(Hub.rowVisual("speaking").area, "career");
+assert.strictEqual(Hub.rowVisual("speaking").emoji, "💼");
+assert.strictEqual(Hub.rowVisual({ id: "next-game" }).area, "referee");
+assert.strictEqual(Hub.rowVisual({ area: "Crew" }).emoji, "⚓");
+
 console.log("hub.test.js: ok");

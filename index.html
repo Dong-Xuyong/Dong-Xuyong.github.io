@@ -7,13 +7,15 @@
   <title>Dong Apps</title>
   <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dong-ui/theme.css?v=5" />
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="stylesheet" href="styles.css?v=11" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
   <script src="dong-ui/theme.js"></script>
 </head>
 <body>
   <main>
     <header class="greet">
+      <img class="greet-banner" src="assets/art/banner.webp" alt="" width="1200" height="400" />
+      <div class="greet-shade" aria-hidden="true"></div>
       <div class="greet-text">
         <h1 id="greet-title"><span id="greet-hello">Good morning</span>, Dong</h1>
         <p id="today-date"></p>
@@ -26,80 +28,105 @@
     <section id="missions" class="missions" hidden></section>
 
     <nav class="tiles" aria-label="Main apps">
-      <a class="tile" data-tile="journal" href="/journal/">
-        <span class="tile-name">Journal</span>
-        <span class="tile-count">—</span>
+      <a class="tile" data-tile="journal" href="/journal/" data-area="journal">
+        <img class="tile-art" src="assets/art/journal.webp" alt="" width="52" height="52" loading="lazy" decoding="async" />
+        <span class="tile-copy">
+          <span class="tile-name"><span class="row-emoji" aria-hidden="true">📖</span>Journal</span>
+          <span class="tile-count">—</span>
+        </span>
       </a>
-      <a class="tile" data-tile="study" href="/wiki-flashcards/">
-        <span class="tile-name">Study</span>
-        <span class="tile-count">—</span>
+      <a class="tile" data-tile="wiki-insights" href="/wiki-flashcards/insights/" data-area="wiki-insights">
+        <img class="tile-art" src="assets/art/wiki-insights.webp" alt="" width="52" height="52" loading="lazy" decoding="async" />
+        <span class="tile-copy">
+          <span class="tile-name"><span class="row-emoji" aria-hidden="true">💡</span>Wiki Insights</span>
+          <span class="tile-count">Open</span>
+        </span>
       </a>
-      <a class="tile" data-tile="health" href="/health/">
-        <span class="tile-name">Health</span>
-        <span class="tile-count">—</span>
+      <a class="tile" data-tile="study" href="/wiki-flashcards/" data-area="study">
+        <img class="tile-art" src="assets/art/study.webp" alt="" width="52" height="52" loading="lazy" decoding="async" />
+        <span class="tile-copy">
+          <span class="tile-name"><span class="row-emoji" aria-hidden="true">📚</span>Study</span>
+          <span class="tile-count">—</span>
+        </span>
       </a>
-      <a class="tile" data-tile="career" href="/career/">
-        <span class="tile-name">Career</span>
-        <span class="tile-count">—</span>
+      <a class="tile" data-tile="health" href="/health/" data-area="health">
+        <img class="tile-art" src="assets/art/health.webp" alt="" width="52" height="52" loading="lazy" decoding="async" />
+        <span class="tile-copy">
+          <span class="tile-name"><span class="row-emoji" aria-hidden="true">💚</span>Health</span>
+          <span class="tile-count">—</span>
+        </span>
       </a>
-      <a class="tile" data-tile="mandarin" href="/chinese-library/">
-        <span class="tile-name">Mandarin</span>
-        <span class="tile-count">—</span>
+      <a class="tile" data-tile="career" href="/career/" data-area="career">
+        <img class="tile-art" src="assets/art/career.webp" alt="" width="52" height="52" loading="lazy" decoding="async" />
+        <span class="tile-copy">
+          <span class="tile-name"><span class="row-emoji" aria-hidden="true">💼</span>Career</span>
+          <span class="tile-count">—</span>
+        </span>
       </a>
-      <a class="tile" data-tile="referee" href="/referee-games/">
-        <span class="tile-name">Referee</span>
-        <span class="tile-count">—</span>
+      <a class="tile" data-tile="mandarin" href="/chinese-library/" data-area="mandarin">
+        <img class="tile-art" src="assets/art/mandarin.webp" alt="" width="52" height="52" loading="lazy" decoding="async" />
+        <span class="tile-copy">
+          <span class="tile-name"><span class="row-emoji" aria-hidden="true">🏮</span>Mandarin</span>
+          <span class="tile-count">—</span>
+        </span>
+      </a>
+      <a class="tile" data-tile="referee" href="/referee-games/" data-area="referee">
+        <img class="tile-art" src="assets/art/referee.webp" alt="" width="52" height="52" loading="lazy" decoding="async" />
+        <span class="tile-copy">
+          <span class="tile-name"><span class="row-emoji" aria-hidden="true">⚽</span>Referee</span>
+          <span class="tile-count">—</span>
+        </span>
       </a>
     </nav>
 
     <details class="all-apps sheet">
       <summary><span class="row-label">All apps</span></summary>
       <nav aria-label="All apps">
-        <section>
+        <section data-area="study">
           <h2>Study</h2>
-          <a href="/wiki-flashcards/">Cards</a>
-          <a href="/wiki-flashcards/#/aws">AWS</a>
-          <a href="/wiki-flashcards/insights/">Insights</a>
+          <a data-area="study" href="/wiki-flashcards/"><span class="row-emoji" aria-hidden="true">📚</span>Cards</a>
+          <a data-area="study" href="/wiki-flashcards/#/aws"><span class="row-emoji" aria-hidden="true">📚</span>AWS</a>
+          <a data-area="wiki-insights" href="/wiki-flashcards/insights/"><span class="row-emoji" aria-hidden="true">💡</span>Insights</a>
         </section>
-        <section>
+        <section data-area="health">
           <h2>Health</h2>
-          <a href="/health/">Health</a>
-          <a href="/health/training/">Training</a>
-          <a href="/health/nutrition/">Nutrition</a>
+          <a data-area="health" href="/health/"><span class="row-emoji" aria-hidden="true">💚</span>Health</a>
+          <a data-area="health" href="/health/training/"><span class="row-emoji" aria-hidden="true">💚</span>Training</a>
+          <a data-area="health" href="/health/nutrition/"><span class="row-emoji" aria-hidden="true">💚</span>Nutrition</a>
         </section>
-        <section>
+        <section data-area="career">
           <h2>Career</h2>
-          <a href="/career/">Pipeline</a>
-          <a href="/speaking-analysis/">Speaking Coach</a>
-          <a href="/job-hunt/">GenAI Job Shortlist</a>
-          <a href="/Resume/">Resume</a>
+          <a data-area="career" href="/career/"><span class="row-emoji" aria-hidden="true">💼</span>Pipeline</a>
+          <a data-area="career" href="/speaking-analysis/"><span class="row-emoji" aria-hidden="true">💼</span>Speaking Coach</a>
+          <a data-area="career" href="/job-hunt/"><span class="row-emoji" aria-hidden="true">💼</span>GenAI Job Shortlist</a>
+          <a data-area="career" href="/Resume/"><span class="row-emoji" aria-hidden="true">💼</span>Resume</a>
         </section>
-        <section>
+        <section data-area="daily">
           <h2>Daily</h2>
-          <a href="/journal/">Journal &amp; Reviews</a>
-          <a href="/mirror/">Morning Brief</a>
-          <a href="/chinese-library/">Mandarin Vocabulary</a>
-          <a href="/piano/">Piano Practice</a>
-          <a href="/thesis/">Thesis Tracker</a>
+          <a data-area="journal" href="/journal/"><span class="row-emoji" aria-hidden="true">📖</span>Journal &amp; Reviews</a>
+          <a data-area="journal" href="/mirror/"><span class="row-emoji" aria-hidden="true">📖</span>Morning Brief</a>
+          <a data-area="mandarin" href="/chinese-library/"><span class="row-emoji" aria-hidden="true">🏮</span>Mandarin Vocabulary</a>
+          <a href="/piano/"><span class="row-emoji" aria-hidden="true">🎹</span>Piano Practice</a>
+          <a data-area="study" href="/thesis/"><span class="row-emoji" aria-hidden="true">📚</span>Thesis Tracker</a>
         </section>
-        <section>
+        <section data-area="life">
           <h2>Life</h2>
-          <a href="/money/">Money</a>
-          <a href="/crew-log/">Crew Log</a>
-          <a href="/referee-games/">Referee Games</a>
-          <a href="/roadmap/">Roadmap</a>
+          <a href="/money/"><span class="row-emoji" aria-hidden="true">💰</span>Money</a>
+          <a href="/crew-log/"><span class="row-emoji" aria-hidden="true">⚓</span>Crew Log</a>
+          <a data-area="referee" href="/referee-games/"><span class="row-emoji" aria-hidden="true">⚽</span>Referee Games</a>
+          <a href="/roadmap/"><span class="row-emoji" aria-hidden="true">🗺️</span>Roadmap</a>
         </section>
-        <section>
+        <section data-area="reference">
           <h2>Reference</h2>
-          <a href="/last30days-archive/">Research Archive</a>
-          <a href="/afbraga-flashcards/">AF Braga Referee Study</a>
-          <a href="/wiki-library/">Wiki Bookshelf</a>
-          <a href="/law-wiki/">Legal Research Wiki</a>
+          <a href="/last30days-archive/"><span class="row-emoji" aria-hidden="true">🔎</span>Research Archive</a>
+          <a data-area="referee" href="/afbraga-flashcards/"><span class="row-emoji" aria-hidden="true">⚽</span>AF Braga Referee Study</a>
+          <a data-area="study" href="/wiki-library/"><span class="row-emoji" aria-hidden="true">📚</span>Wiki Bookshelf</a>
+          <a data-area="study" href="/law-wiki/"><span class="row-emoji" aria-hidden="true">📚</span>Legal Research Wiki</a>
         </section>
       </nav>
     </details>
   </main>
   <script src="dong-ui/gh-sync.js?v=1"></script>
-  <script src="hub.js?v=7"></script>
+  <script src="hub.js?v=8"></script>
 </body>
 </html>

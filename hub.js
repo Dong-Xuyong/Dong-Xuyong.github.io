@@ -812,6 +812,36 @@
 
   var AREA_ORDER = ["Journal", "Health", "Study", "Mandarin", "Practice", "Referee"];
 
+  // Training and meals share Health. Speaking shares Career. Piano and the
+  // mission groups keep their own marks; they are not palette areas.
+  var ROW_VISUAL = {
+    morning: { emoji: "📖", area: "journal" },
+    evening: { emoji: "📖", area: "journal" },
+    habits: { emoji: "📖", area: "journal" },
+    meals: { emoji: "💚", area: "health" },
+    food: { emoji: "💚", area: "health" },
+    training: { emoji: "💚", area: "health" },
+    wiki: { emoji: "📚", area: "study" },
+    chinese: { emoji: "🏮", area: "mandarin" },
+    speaking: { emoji: "💼", area: "career" },
+    piano: { emoji: "🎹", area: "piano" },
+    "next-game": { emoji: "⚽", area: "referee" },
+  };
+
+  function rowVisual(row) {
+    var id = typeof row === "string" ? row : row && row.id;
+    var area;
+    if (id && ROW_VISUAL[id]) return ROW_VISUAL[id];
+    area = row && typeof row.area === "string" ? row.area : "";
+    if (area === "Admin") return { emoji: "📋", area: "admin" };
+    if (area === "Crew") return { emoji: "⚓", area: "crew" };
+    return null;
+  }
+
+  function areaSlug(name) {
+    return String(name || "").trim().toLowerCase();
+  }
+
   // Morning is the focus only before noon. Evening joins the list from 18:00,
   // matching missingItems. Anything else in this list is always eligible.
   var FOCUS_IDS = [
@@ -1035,11 +1065,15 @@
 
   function lineRow(row, badgeText, soon) {
     var line = row.href ? el("a", "line") : el("div", "line");
-    var text = row.label;
+    var mark = rowVisual(row);
+    var badge;
     if (row.href) line.href = row.href;
-    if (row.detail) text += " · " + row.detail;
-    line.appendChild(el("span", "row-label", text));
-    if (badgeText) line.appendChild(el("span", "badge" + (soon ? " badge-soon" : ""), badgeText));
+    line.appendChild(lineLabel(row));
+    if (badgeText) {
+      badge = el("span", "badge" + (soon ? " badge-soon" : ""), badgeText);
+      if (mark && mark.area) badge.setAttribute("data-area", mark.area);
+      line.appendChild(badge);
+    }
     return line;
   }
 
@@ -1064,6 +1098,7 @@
     groups.forEach(function (group) {
       var block = el("div", "area-block");
       var list = el("ul", "line-list");
+      block.setAttribute("data-area", areaSlug(group.area));
       block.appendChild(el("h3", "area-label", group.area));
       group.items.forEach(function (row) {
         var li = el("li");
@@ -1098,10 +1133,17 @@
     }
     if (state.note) host.appendChild(el("p", "sync-hint", state.note));
     if (state.focus) {
+      var focusMark = rowVisual(state.focus);
+      var focusBadge;
       card = el("a", "focus-card");
       card.href = state.focus.href;
+      if (focusMark && focusMark.area) card.setAttribute("data-area", focusMark.area);
       card.appendChild(lineLabel(state.focus));
-      if (state.focus.badge) card.appendChild(el("span", "badge", state.focus.badge));
+      if (state.focus.badge) {
+        focusBadge = el("span", "badge", state.focus.badge);
+        if (focusMark && focusMark.area) focusBadge.setAttribute("data-area", focusMark.area);
+        card.appendChild(focusBadge);
+      }
       card.appendChild(el("span", "go", "Go"));
       host.appendChild(card);
       host.setAttribute("data-focus", state.focus.id);
@@ -1117,8 +1159,19 @@
 
   function lineLabel(row) {
     var text = row.label;
+    var mark = rowVisual(row);
+    var node = el("span", "row-label");
+    var emoji;
     if (row.detail) text += " · " + row.detail;
-    return el("span", "row-label", text);
+    if (mark && mark.emoji) {
+      emoji = el("span", "row-emoji", mark.emoji);
+      emoji.setAttribute("aria-hidden", "true");
+      node.appendChild(emoji);
+      node.appendChild(document.createTextNode(text));
+    } else {
+      node.textContent = text;
+    }
+    return node;
   }
 
   function renderAlerts(items) {
@@ -1131,7 +1184,7 @@
       var details = el("details", "sheet alert-group");
       var summary = el("summary");
       var list = el("ul", "line-list");
-      details.setAttribute("data-area", group.area);
+      details.setAttribute("data-area", areaSlug(group.area));
       summary.appendChild(el("span", "row-label", alertHeadline(group.area, group.items.length)));
       details.appendChild(summary);
       group.items.forEach(function (row) {
@@ -1297,6 +1350,7 @@
     alertHeadline: alertHeadline,
     missionHeadline: missionHeadline,
     missionUrgent: missionUrgent,
+    rowVisual: rowVisual,
     boot: boot,
   };
 

@@ -1,3 +1,68 @@
+/* Accents from assets/art/palette.json. Ink is the same hue, shifted so
+   header, pill, and tile-label text stays at least AA on both themes. */
+:root {
+  --area-journal: #F2A93B;
+  --area-study: #4C6EF5;
+  --area-health: #2FB872;
+  --area-career: #8B5CF6;
+  --area-mandarin: #E5484D;
+  --area-referee: #14B8A6;
+  --area-wiki-insights: #0EA5E9;
+
+  --area-journal-ink: #855D20;
+  --area-study-ink: #3F5BCB;
+  --area-health-ink: #1D7247;
+  --area-career-ink: #724BCA;
+  --area-mandarin-ink: #B5393D;
+  --area-referee-ink: #0C7267;
+  --area-wiki-insights-ink: #096B97;
+}
+
+html.dark {
+  --area-journal-ink: #F2A93B;
+  --area-study-ink: #829AF8;
+  --area-health-ink: #2FB872;
+  --area-career-ink: #AE8DF9;
+  --area-mandarin-ink: #ED7F82;
+  --area-referee-ink: #14B8A6;
+  --area-wiki-insights-ink: #18A9EA;
+}
+
+[data-area="journal"] {
+  --area: var(--area-journal);
+  --area-ink: var(--area-journal-ink);
+}
+
+[data-area="study"] {
+  --area: var(--area-study);
+  --area-ink: var(--area-study-ink);
+}
+
+[data-area="health"] {
+  --area: var(--area-health);
+  --area-ink: var(--area-health-ink);
+}
+
+[data-area="career"] {
+  --area: var(--area-career);
+  --area-ink: var(--area-career-ink);
+}
+
+[data-area="mandarin"] {
+  --area: var(--area-mandarin);
+  --area-ink: var(--area-mandarin-ink);
+}
+
+[data-area="referee"] {
+  --area: var(--area-referee);
+  --area-ink: var(--area-referee-ink);
+}
+
+[data-area="wiki-insights"] {
+  --area: var(--area-wiki-insights);
+  --area-ink: var(--area-wiki-insights-ink);
+}
+
 main {
   width: min(440px, calc(100% - 32px));
   margin: 0 auto;
@@ -17,14 +82,46 @@ p {
 }
 
 .greet {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
   min-height: 44px;
+  aspect-ratio: 3 / 1;
+  padding: 12px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 0.55);
+}
+
+.greet-banner {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.greet-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    hsl(0 0% 0% / 0) 0%,
+    hsl(0 0% 0% / 0.22) 30%,
+    hsl(0 0% 0% / 0.82) 58%,
+    hsl(0 0% 0% / 0.9) 100%
+  );
 }
 
 .greet-text {
+  position: relative;
+  z-index: 2;
   min-width: 0;
 }
 
@@ -36,11 +133,12 @@ p {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #fff;
 }
 
 .greet p {
   margin-top: 2px;
-  color: var(--muted-text);
+  color: #fff;
   font-size: 0.84rem;
 }
 
@@ -48,13 +146,14 @@ p {
   position: relative;
   top: auto;
   right: auto;
-  z-index: auto;
+  z-index: 2;
   flex: none;
   width: 44px;
   height: 44px;
   background: transparent;
   border-color: transparent;
   box-shadow: none;
+  color: hsl(var(--foreground));
 }
 
 .greet .dong-theme-toggle__track {
@@ -86,6 +185,10 @@ p {
   box-shadow: 0 8px 24px hsl(0 0% 0% / 0.06);
 }
 
+.focus-card[data-area] {
+  border-color: var(--area-ink);
+}
+
 .focus-done {
   color: var(--muted-text);
   font-weight: 600;
@@ -105,6 +208,13 @@ p {
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.25;
+}
+
+.row-emoji {
+  display: inline-block;
+  margin-right: 0.35em;
+  font-style: normal;
+  line-height: 1;
 }
 
 .focus-card .row-label,
@@ -146,7 +256,13 @@ summary .row-label {
   white-space: nowrap;
 }
 
-.badge-soon {
+.badge[data-area] {
+  color: var(--area-ink);
+  background: color-mix(in srgb, var(--area) 10%, transparent);
+}
+
+.badge-soon,
+.badge.badge-soon {
   background: hsl(var(--destructive) / 0.12);
   color: hsl(var(--destructive));
 }
@@ -230,7 +346,25 @@ summary.is-soon::after {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--muted-text);
+  color: var(--area-ink, var(--muted-text));
+}
+
+.alert-group[data-area] > summary .row-label {
+  color: var(--area-ink, inherit);
+}
+
+.alert-group:is([data-area="journal"], [data-area="study"], [data-area="health"], [data-area="career"], [data-area="mandarin"], [data-area="referee"], [data-area="wiki-insights"]) > summary .row-label::before,
+:is([data-area="journal"], [data-area="study"], [data-area="health"], [data-area="career"], [data-area="mandarin"], [data-area="referee"], [data-area="wiki-insights"]) > .area-label::before,
+.all-apps :is([data-area="journal"], [data-area="study"], [data-area="health"], [data-area="career"], [data-area="mandarin"], [data-area="referee"], [data-area="wiki-insights"]) > h2::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.4rem;
+  border-radius: 999px;
+  background: var(--area);
+  box-shadow: inset 0 0 0 1px var(--area-ink);
+  vertical-align: 0;
 }
 
 .line-list {
@@ -273,22 +407,46 @@ summary.is-soon::after {
 .tile {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
-  gap: 4px;
+  gap: 8px;
   min-height: 72px;
-  padding: 12px 14px;
+  padding: 12px;
   border-radius: 16px;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border) / 0.85);
   min-width: 0;
 }
 
+.tile[data-area] {
+  border-color: var(--area-ink);
+  background: color-mix(in srgb, var(--area) 10%, hsl(var(--card)));
+}
+
+.tile-art {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  object-fit: contain;
+}
+
+.tile-copy {
+  min-width: 0;
+  width: 100%;
+}
+
 .tile-name {
+  display: block;
   font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted-text);
+  line-height: 1.25;
+}
+
+.tile[data-area] .tile-name {
+  color: var(--area-ink);
 }
 
 .tile-count {
