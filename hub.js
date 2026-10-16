@@ -341,7 +341,22 @@
     return null;
   }
 
-  // Speaking Coach stores the daily 2-minute check-in only in localStorage.
+  // A calendar day stays as written. A timestamp is the Lisbon day it falls on.
+  function practiceDay(value) {
+    var trimmed;
+    var parsed;
+    if (typeof value === "number") return lisbonDayFromMs(value);
+    if (typeof value !== "string") return "";
+    trimmed = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    if (/^\d{4}-\d{2}-\d{2}[T ]/.test(trimmed)) {
+      parsed = Date.parse(trimmed);
+      if (!isNaN(parsed)) return lisbonDay(new Date(parsed));
+    }
+    return dayStamp(trimmed);
+  }
+
+  // Speaking Coach still mirrors a tap into localStorage checkins.
   // Missing, unreadable, or a checkins list without today means not done.
   function speakingDone(raw, today) {
     var parsed;
@@ -356,9 +371,117 @@
     if (!isRecord(parsed)) return false;
     checkins = Array.isArray(parsed.checkins) ? parsed.checkins : [];
     for (i = 0; i < checkins.length; i++) {
-      if (dayStamp(checkins[i]) === today) return true;
+      if (practiceDay(checkins[i]) === today) return true;
     }
     return false;
+  }
+
+  // requireDone is the practice log (reps.json): the row must be marked done.
+  // Sessions count when the date matches, including audio-only memos.
+  function listHasPractice(list, today, requireDone) {
+    var i;
+    var row;
+    var day;
+    if (!Array.isArray(list)) return false;
+    for (i = 0; i < list.length; i++) {
+      row = list[i];
+      if (typeof row === "string" || typeof row === "number") {
+        if (!requireDone && practiceDay(row) === today) return true;
+        continue;
+      }
+      if (!isRecord(row)) continue;
+      day = practiceDay(row.date || row.day);
+      if (day !== today) continue;
+      if (requireDone && row.done !== true) continue;
+      return true;
+    }
+    return false;
+  }
+
+  function mapHasPractice(map, today) {
+    var entry;
+    var keys;
+    var i;
+    if (!isRecord(map)) return false;
+    if (Object.prototype.hasOwnProperty.call(map, today)) {
+      entry = map[today];
+      if (entry != null && entry !== false) return true;
+    }
+    keys = Object.keys(map);
+    for (i = 0; i < keys.length; i++) {
+      entry = map[keys[i]];
+      if (typeof entry === "string" || typeof entry === "number") {
+        if (practiceDay(entry) === today) return true;
+        continue;
+      }
+      if (isRecord(entry) && practiceDay(entry.date || entry.day) === today) return true;
+    }
+    return false;
+  }
+
+  // progress-sync speaking.json and speaking-analysis data/index.json both
+  // keep a sessions/practice log. A session for today, or a practice-log
+  // entry with done true, means the day is done. Bad shapes are not done.
+  function fileHasPractice(file, today) {
+    var parsed;
+    if (file == null || file === "") return false;
+    if (typeof file === "string") {
+      try {
+        parsed = JSON.parse(file);
+      } catch (e) {
+        return false;
+      }
+      return fileHasPractice(parsed, today);
+    }
+    if (Array.isArray(file)) return listHasPractice(file, today, true);
+    if (!isRecord(file)) return false;
+    if (Array.isArray(file.checkins) && listHasPractice(file.checkins, today, false)) return true;
+    if (Array.isArray(file.sessions) && listHasPractice(file.sessions, today, false)) return true;
+    if (isRecord(file.sessions) && mapHasPractice(file.sessions, today)) return true;
+    if (Array.isArray(file.reps) && listHasPractice(file.reps, today, true)) return true;
+    if (Array.isArray(file.practice) && listHasPractice(file.practice, today, true)) return true;
+    if (isRecord(file.practice) && mapHasPractice(file.practice, today)) return true;
+    if (isRecord(file.days) && mapHasPractice(file.days, today)) return true;
+    return false;
+  }
+
+  function speakingHabitOn(sources, today) {
+    var journalEntry;
+    if (!sources || sources.journalError) return false;
+    journalEntry = dayEntry(sources.journal, today);
+    return !!(journalEntry && isRecord(journalEntry.habits) && journalEntry.habits.speaking === true);
+  }
+
+  // Same signals Speaking Coach uses: a session dated today, or today's
+  // practice-log entry marked done. localStorage is only the on-device copy.
+  function speakingLogged(sources, today) {
+    if (!sources) return false;
+    try {
+      if (sources.speakingMark === true) return true;
+      if (speakingDone(sources.speakingRaw, today)) return true;
+      if (fileHasPractice(sources.speaking, today)) return true;
+      if (fileHasPractice(sources.speakingCatalog, today)) return true;
+      if (fileHasPractice(sources.speakingPractice, today)) return true;
+    } catch (e) {
+      return false;
+    }
+    return false;
+  }
+
+  function speakingStatus(sources, today) {
+    var done = false;
+    try {
+      done = speakingHabitOn(sources, today) || speakingLogged(sources, today);
+    } catch (e) {
+      done = false;
+    }
+    return {
+      done: done,
+      label: "Speaking practice",
+      href: "/speaking-analysis/",
+      badge: done ? "✓" : "open",
+      action: done ? "✓" : "Go",
+    };
   }
 
   // piano.json sessions are keyed by YYYY-MM-DD. A day is logged when minutes > 0.
@@ -722,6 +845,9 @@
    * JSON or null when the file is missing. A true *Error flag means that
    * read failed and the check must stay unknown.
    * speakingRaw is the localStorage string, or null when the key is absent.
+   * speaking is progress-sync speaking.json. speakingCatalog is
+   * speaking-analysis data/index.json. speakingPractice is data/reps.json.
+   * Missing or unreadable speaking logs are not done.
    * piano is piano.json, or null when that file is missing.
    * referee is referee-games.json, or null when that file is missing.
    * Next game is omitted when the file is missing or nothing is upcoming.
@@ -739,8 +865,7 @@
     var next;
     var showEvening;
     var nutDay;
-    var journalEntry;
-    var speakingHabit;
+    var speech;
     showEvening = !(typeof hour === "number" && isFinite(hour)) || hour >= 18;
     if (sources.journalError) unknown = true;
     else {
@@ -774,15 +899,9 @@
       }
     }
 
-    speakingHabit = false;
-    if (!sources.journalError) {
-      journalEntry = dayEntry(sources.journal, today);
-      if (journalEntry && isRecord(journalEntry.habits) && journalEntry.habits.speaking === true) {
-        speakingHabit = true;
-      }
-    }
-    if (!speakingDone(sources.speakingRaw, today) && !speakingHabit) {
-      items.push(item("speaking", "open", "Speaking practice", "/speaking-analysis/"));
+    speech = speakingStatus(sources, today);
+    if (!speech.done) {
+      items.push(item("speaking", speech.badge, speech.label, speech.href));
     }
 
     if (sources.pianoError) unknown = true;
@@ -811,7 +930,7 @@
     next = nextGameItem(sources.referee, today);
     if (next) items.push(next);
 
-    return { items: items, unknown: unknown };
+    return { items: items, unknown: unknown, speakingDone: speech.done };
   }
 
   var AREA_OF = {
@@ -1217,12 +1336,27 @@
     paintBundle();
   }
 
+  function speakingDoneCard() {
+    var mark = rowVisual("speaking");
+    var card = el("a", "focus-card");
+    var check;
+    card.href = "/speaking-analysis/";
+    card.setAttribute("data-speaking-card", "done");
+    if (mark && paletteArea(mark.area)) card.setAttribute("data-area", paletteArea(mark.area));
+    card.appendChild(lineLabel({ id: "speaking", label: "Speaking practice" }));
+    check = el("span", "go", "✓");
+    check.setAttribute("aria-label", "Done");
+    card.appendChild(check);
+    return card;
+  }
+
   function renderFocus(state) {
     var host = document.getElementById("focus");
     var card;
     if (!host) return;
     host.textContent = "";
     host.removeAttribute("data-focus");
+    host.removeAttribute("data-speaking");
     if (!state.connected) {
       card = el("a", "focus-card");
       card.href = "/journal/";
@@ -1238,23 +1372,28 @@
       return;
     }
     if (state.note) host.appendChild(el("p", "sync-hint", state.note));
+    if (state.speakingDone) host.setAttribute("data-speaking", "done");
     if (state.focus) {
       var focusMark = rowVisual(state.focus);
       var focusBadge;
+      var action = state.focus.done ? "✓" : "Go";
       card = el("a", "focus-card");
       card.href = state.focus.href;
       if (focusMark && paletteArea(focusMark.area)) card.setAttribute("data-area", paletteArea(focusMark.area));
       card.appendChild(lineLabel(state.focus));
-      if (state.focus.badge) {
+      if (!state.focus.done && state.focus.badge) {
         focusBadge = el("span", "badge", state.focus.badge);
         if (focusMark && paletteArea(focusMark.area)) focusBadge.setAttribute("data-area", paletteArea(focusMark.area));
         card.appendChild(focusBadge);
       }
-      card.appendChild(el("span", "go", "Go"));
+      card.appendChild(el("span", "go", action));
+      if (state.focus.done) card.setAttribute("data-speaking-card", "done");
       host.appendChild(card);
       host.setAttribute("data-focus", state.focus.id);
+      if (state.speakingDone && state.focus.id !== "speaking") host.appendChild(speakingDoneCard());
       return;
     }
+    if (state.speakingDone) host.appendChild(speakingDoneCard());
     if (state.hideDone) {
       host.setAttribute("data-focus", state.unknown ? "error" : "off");
       return;
@@ -1264,7 +1403,7 @@
       host.setAttribute("data-focus", "done");
       return;
     }
-    host.setAttribute("data-focus", "error");
+    if (!state.speakingDone) host.setAttribute("data-focus", "error");
   }
 
   function lineLabel(row) {
@@ -1348,11 +1487,55 @@
     }
   }
 
+  function readSpeakingMark(today) {
+    try {
+      if (!root.localStorage) return false;
+      return root.localStorage.getItem("speaking-done:" + today) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function fetchSpeakingPublic() {
+    var fetchFn = root.fetch;
+    function one(url) {
+      if (typeof fetchFn !== "function") return Promise.resolve(null);
+      return fetchFn(url, { cache: "no-store" }).then(
+        function (res) {
+          if (!res || !res.ok) return null;
+          return res.json().catch(function () {
+            return null;
+          });
+        },
+        function () {
+          return null;
+        }
+      );
+    }
+    return Promise.all([
+      one("/speaking-analysis/data/index.json"),
+      one("/speaking-analysis/data/reps.json"),
+    ]).then(
+      function (pair) {
+        return {
+          key: "speakingPublic",
+          data: { catalog: pair[0], practice: pair[1] },
+          error: false,
+        };
+      },
+      function () {
+        return { key: "speakingPublic", data: { catalog: null, practice: null }, error: false };
+      }
+    );
+  }
+
   function loadToday(today) {
     var cfg = root.GhSync && root.GhSync.readConfig ? root.GhSync.readConfig() : null;
     var speakingRaw = readSpeakingRaw();
+    var speakingMark = readSpeakingMark(today);
     var hour = lisbonHour(new Date());
     var names;
+    var jobs;
     if (!cfg) {
       renderJournal(JOURNAL_CARD_EMPTY);
       renderFocus({ connected: false });
@@ -1381,27 +1564,39 @@
       ["piano", "piano"],
       ["referee", "referee-games"],
       ["career", "career"],
+      ["speaking", "speaking"],
     ];
 
-    Promise.all(
-      names.map(function (pair) {
-        return root.GhSync.fetchJson(cfg, pair[1]).then(
-          function (data) {
-            return { key: pair[0], data: data, error: false };
-          },
-          function () {
-            return { key: pair[0], data: null, error: true };
-          }
-        );
-      })
-    ).then(function (results) {
-      var sources = { speakingRaw: speakingRaw };
+    jobs = names.map(function (pair) {
+      return root.GhSync.fetchJson(cfg, pair[1]).then(
+        function (data) {
+          return { key: pair[0], data: data, error: false };
+        },
+        function () {
+          return { key: pair[0], data: null, error: true };
+        }
+      );
+    });
+    jobs.push(fetchSpeakingPublic());
+
+    Promise.all(jobs).then(function (results) {
+      var sources = { speakingRaw: speakingRaw, speakingMark: speakingMark };
       var failed = [];
       var report;
       var focus;
       var alerts = [];
       results.forEach(function (result) {
         sources[result.key] = result.data;
+        if (result.key === "speakingPublic") {
+          sources.speakingCatalog = result.data && result.data.catalog;
+          sources.speakingPractice = result.data && result.data.practice;
+          return;
+        }
+        // A missing speaking.json must not blank the other checks.
+        if (result.key === "speaking") {
+          if (result.error) sources.speaking = null;
+          return;
+        }
         if (result.key === "referee") return;
         // A failed career read must not mark the other checks unknown.
         if (result.key === "career") {
@@ -1423,6 +1618,7 @@
       renderFocus({
         connected: true,
         focus: focus,
+        speakingDone: report.speakingDone,
         unknown: report.unknown,
         hideDone: hideDoneCard(report.items, hour),
         note: failed.length ? "Some logs could not be read." : "",
@@ -1464,6 +1660,7 @@
     wikiDueCount: wikiDueCount,
     chineseDueCount: chineseDueCount,
     speakingDone: speakingDone,
+    speakingStatus: speakingStatus,
     pianoLogged: pianoLogged,
     nextGameItem: nextGameItem,
     habitsLeft: habitsLeft,
