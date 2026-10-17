@@ -1516,12 +1516,14 @@
       renderFocus({ connected: false });
       renderAlerts([]);
       renderTiles(neutralTiles());
+      renderWeather("");
       return;
     }
 
     renderJournal(JOURNAL_CARD_EMPTY);
     renderFocus({ connected: true, loading: true });
     renderAlerts([]);
+    loadBriefWeather(cfg, today);
 
     root.GhSync.fetchJson(cfg, "crew-log").then(
       function (data) {
@@ -1597,113 +1599,81 @@
     });
   }
 
-  // Guimarães via Open-Meteo (no key). A localStorage line lasts 30 minutes.
-  // A miss, a stale entry, or a bad payload hides the line.
-  var WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=41.44&longitude=-8.29&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FLisbon&forecast_days=1";
-  var WEATHER_CACHE_KEY = "hub-weather";
-  var WEATHER_TTL_MS = 30 * 60 * 1000;
-
-  // WMO weather interpretation codes. Unknown codes hide the line.
-  var WEATHER_EMOJI = {
-    0: "☀️",
-    1: "🌤️",
-    2: "⛅",
-    3: "☁️",
-    45: "🌫️",
-    48: "🌫️",
-    51: "🌦️",
-    53: "🌦️",
-    55: "🌦️",
-    56: "🌧️",
-    57: "🌧️",
-    61: "🌧️",
-    63: "🌧️",
-    65: "🌧️",
-    66: "🌧️",
-    67: "🌧️",
-    71: "🌨️",
-    73: "🌨️",
-    75: "🌨️",
-    77: "🌨️",
-    80: "🌦️",
-    81: "🌦️",
-    82: "🌦️",
-    85: "🌨️",
-    86: "🌨️",
-    95: "⛈️",
-    96: "⛈️",
-    99: "⛈️",
-  };
-
-  function weatherEmoji(code) {
-    var n = finiteNumber(code);
-    if (n == null) return "";
-    return WEATHER_EMOJI[Math.round(n)] || "";
-  }
-
+  // Morning Brief: progress-sync file mirror.json, read with the same
+  // GhSync.fetchJson(cfg, "mirror") call as the other logs. Today's Lisbon
+  // day is days["YYYY-MM-DD"]. Prefer weather { emoji, now_c, min_c, max_c, date }
+  // when date is today. Otherwise a "⛅ 17° · 12°/21°" line inside brief.
   function roundDegrees(value) {
     var n = finiteNumber(value);
     if (n == null) return null;
     return Math.round(n);
   }
 
-  function firstOf(list) {
-    if (!Array.isArray(list) || !list.length) return null;
-    return list[0];
-  }
-
-  // "⛅ 17° · 12°/21°". Empty when any piece is missing.
-  function weatherLine(payload) {
-    var current;
-    var daily;
-    var emoji;
-    var now;
-    var low;
-    var high;
-    if (!isRecord(payload)) return "";
-    current = payload.current;
-    daily = payload.daily;
-    if (!isRecord(current) || !isRecord(daily)) return "";
-    emoji = weatherEmoji(current.weather_code);
-    now = roundDegrees(current.temperature_2m);
-    low = roundDegrees(firstOf(daily.temperature_2m_min));
-    high = roundDegrees(firstOf(daily.temperature_2m_max));
+  function formatWeatherLine(emoji, now, low, high) {
     if (!emoji || now == null || low == null || high == null) return "";
     return emoji + " " + now + "° · " + low + "°/" + high + "°";
   }
 
-  // Fresh when the stored line is non-empty and at most 30 minutes old.
-  function weatherCacheHit(raw, now) {
-    var parsed;
-    var age;
-    if (typeof raw !== "string" || raw === "") return "";
-    if (typeof now !== "number" || !isFinite(now)) return "";
-    try {
-      parsed = JSON.parse(raw);
-    } catch (e) {
-      return "";
-    }
-    if (!isRecord(parsed) || typeof parsed.line !== "string" || parsed.line === "") return "";
-    if (typeof parsed.at !== "number" || !isFinite(parsed.at)) return "";
-    age = now - parsed.at;
-    if (age < 0 || age > WEATHER_TTL_MS) return "";
-    return parsed.line;
+  function isWeatherEmoji(token) {
+    if (typeof token !== "string") return false;
+    token = token.trim();
+    if (!token || token.length > 16) return false;
+    if (/[A-Za-z0-9]/.test(token)) return false;
+    if (/^[\s.,:;·•|/\\-]+$/.test(token)) return false;
+    return true;
   }
 
-  function readWeatherCache(now) {
-    try {
-      if (!root.localStorage) return "";
-      return weatherCacheHit(root.localStorage.getItem(WEATHER_CACHE_KEY), now);
-    } catch (e) {
-      return "";
-    }
+  // null when the preferred object is absent. "" when it is present but not today's.
+  function structuredWeatherLine(weather, today) {
+    var emoji;
+    var now;
+    var low;
+    var high;
+    if (!isRecord(weather) || typeof weather.date !== "string") return null;
+    if (weather.date !== today) return "";
+    emoji = typeof weather.emoji === "string" ? weather.emoji.trim() : "";
+    now = roundDegrees(weather.now_c);
+    low = roundDegrees(weather.min_c);
+    high = roundDegrees(weather.max_c);
+    if (!isWeatherEmoji(emoji) || now == null || low == null || high == null) return "";
+    return formatWeatherLine(emoji, now, low, high);
   }
 
-  function writeWeatherCache(line, now) {
-    try {
-      if (!root.localStorage || !line) return;
-      root.localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ at: now, line: line }));
-    } catch (e) {}
+  function weatherTextLine(brief, today) {
+    var re = /(\S+)\s+(-?\d+(?:\.\d+)?)°\s*·\s*(-?\d+(?:\.\d+)?)°\s*\/\s*(-?\d+(?:\.\d+)?)°/g;
+    var match;
+    if (typeof brief !== "string" || !brief) return "";
+    while ((match = re.exec(brief))) {
+      var lineStart = brief.lastIndexOf("\n", match.index);
+      var lineEnd = brief.indexOf("\n", match.index);
+      var line = brief.slice(lineStart + 1, lineEnd === -1 ? brief.length : lineEnd);
+      var dates = line.match(/\d{4}-\d{2}-\d{2}/g);
+      var emoji;
+      var now;
+      var low;
+      var high;
+      if (dates && dates.indexOf(today) === -1) continue;
+      emoji = match[1];
+      if (!isWeatherEmoji(emoji)) continue;
+      now = roundDegrees(match[2]);
+      low = roundDegrees(match[3]);
+      high = roundDegrees(match[4]);
+      if (now == null || low == null || high == null) continue;
+      return formatWeatherLine(emoji.trim(), now, low, high);
+    }
+    return "";
+  }
+
+  function briefWeatherLine(file, today) {
+    var day;
+    var structured;
+    if (typeof today !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(today)) return "";
+    if (!isRecord(file) || !isRecord(file.days)) return "";
+    day = file.days[today];
+    if (!isRecord(day)) return "";
+    structured = structuredWeatherLine(day.weather, today);
+    if (structured != null) return structured;
+    return weatherTextLine(day.brief, today);
   }
 
   function renderWeather(line) {
@@ -1720,39 +1690,12 @@
     node.hidden = false;
   }
 
-  function loadWeather() {
-    var now = Date.now();
-    var cached;
-    try {
-      cached = readWeatherCache(now);
-    } catch (e) {
-      cached = "";
-    }
-    if (cached) {
-      renderWeather(cached);
-      return;
-    }
+  function loadBriefWeather(cfg, today) {
     renderWeather("");
-    if (typeof root.fetch !== "function") return;
-    root.fetch(WEATHER_URL, { cache: "no-store" }).then(
-      function (res) {
-        if (!res || !res.ok) return null;
-        return res.json().catch(function () {
-          return null;
-        });
-      },
-      function () {
-        return null;
-      }
-    ).then(
+    if (!cfg || !root.GhSync || typeof root.GhSync.fetchJson !== "function") return;
+    root.GhSync.fetchJson(cfg, "mirror").then(
       function (data) {
-        var line = weatherLine(data);
-        if (!line) {
-          renderWeather("");
-          return;
-        }
-        writeWeatherCache(line, Date.now());
-        renderWeather(line);
+        renderWeather(briefWeatherLine(data, today));
       },
       function () {
         renderWeather("");
@@ -1767,7 +1710,6 @@
     var date = document.getElementById("today-date");
     if (hello) hello.textContent = greeting(lisbonHour(now));
     if (date) date.textContent = todayLabel(now);
-    loadWeather();
     renderMissions(today);
     loadToday(today);
   }
@@ -1798,9 +1740,7 @@
     nextGameItem: nextGameItem,
     habitsLeft: habitsLeft,
     greeting: greeting,
-    weatherEmoji: weatherEmoji,
-    weatherLine: weatherLine,
-    weatherCacheHit: weatherCacheHit,
+    briefWeatherLine: briefWeatherLine,
     quoteOfDay: quoteOfDay,
     journalCardText: journalCardText,
     hideDoneCard: hideDoneCard,

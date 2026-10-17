@@ -431,7 +431,7 @@ assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
 assert.ok(html.indexOf("styles.css?v=18") !== -1);
-assert.ok(html.indexOf("hub.js?v=15") !== -1);
+assert.ok(html.indexOf("hub.js?v=16") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/reps.json") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/index.json") !== -1);
 assert.ok(hubSrc.indexOf('getItem("speaking-done:" + today) === "1"') !== -1);
@@ -546,79 +546,48 @@ var bundleTag = html.slice(bundleStart, html.indexOf(">", bundleStart) + 1);
 assert.strictEqual(bundleTag.indexOf("open"), -1);
 assert.ok(hubSrc.indexOf('classList.toggle("is-soon", missionUrgent(bundleMissions))') !== -1);
 
-// 22. Guimarães weather: WMO emoji, "⛅ 17° · 12°/21°", 30 min cache, hide on failure.
-var weatherEmoji = {
-  0: "☀️",
-  1: "🌤️",
-  2: "⛅",
-  3: "☁️",
-  45: "🌫️",
-  48: "🌫️",
-  51: "🌦️",
-  53: "🌦️",
-  55: "🌦️",
-  56: "🌧️",
-  57: "🌧️",
-  61: "🌧️",
-  63: "🌧️",
-  65: "🌧️",
-  66: "🌧️",
-  67: "🌧️",
-  71: "🌨️",
-  73: "🌨️",
-  75: "🌨️",
-  77: "🌨️",
-  80: "🌦️",
-  81: "🌦️",
-  82: "🌦️",
-  85: "🌨️",
-  86: "🌨️",
-  95: "⛈️",
-  96: "⛈️",
-  99: "⛈️",
-};
-Object.keys(weatherEmoji).forEach(function (code) {
-  assert.strictEqual(Hub.weatherEmoji(+code), weatherEmoji[code], code);
-});
-assert.strictEqual(Hub.weatherEmoji("2"), "⛅");
-assert.strictEqual(Hub.weatherEmoji(2.4), "⛅");
-assert.strictEqual(Hub.weatherEmoji(null), "");
-assert.strictEqual(Hub.weatherEmoji(4), "");
-assert.strictEqual(Hub.weatherEmoji(100), "");
-assert.strictEqual(Hub.weatherLine({
-  current: { temperature_2m: 17.2, weather_code: 2 },
-  daily: { temperature_2m_min: [12.4], temperature_2m_max: [21.2] },
-}), "⛅ 17° · 12°/21°");
-assert.strictEqual(Hub.weatherLine({
-  current: { temperature_2m: -1.5, weather_code: 71 },
-  daily: { temperature_2m_min: [-3.2], temperature_2m_max: [0.4] },
-}), "🌨️ -1° · -3°/0°");
-assert.strictEqual(Hub.weatherLine({
-  current: { temperature_2m: 17.5, weather_code: 0 },
-  daily: { temperature_2m_min: [12.5], temperature_2m_max: [20.5] },
-}), "☀️ 18° · 13°/21°");
-assert.strictEqual(Hub.weatherLine(null), "");
-assert.strictEqual(Hub.weatherLine({}), "");
-assert.strictEqual(Hub.weatherLine({ current: { temperature_2m: 17, weather_code: 2 } }), "");
-assert.strictEqual(Hub.weatherLine({
-  current: { temperature_2m: 17, weather_code: 4 },
-  daily: { temperature_2m_min: [12], temperature_2m_max: [21] },
-}), "");
-assert.strictEqual(Hub.weatherLine({
-  current: { weather_code: 2 },
-  daily: { temperature_2m_min: [12], temperature_2m_max: [21] },
-}), "");
-var weatherSample = JSON.stringify({ at: 1000, line: "⛅ 17° · 12°/21°" });
-assert.strictEqual(Hub.weatherCacheHit(weatherSample, 1000), "⛅ 17° · 12°/21°");
-assert.strictEqual(Hub.weatherCacheHit(weatherSample, 1000 + 30 * 60 * 1000), "⛅ 17° · 12°/21°");
-assert.strictEqual(Hub.weatherCacheHit(weatherSample, 1000 + 30 * 60 * 1000 + 1), "");
-assert.strictEqual(Hub.weatherCacheHit(weatherSample, 999), "");
-assert.strictEqual(Hub.weatherCacheHit("nope", 1000), "");
-assert.strictEqual(Hub.weatherCacheHit("", 1000), "");
-assert.strictEqual(Hub.weatherCacheHit(JSON.stringify({ at: 1000, line: "" }), 1000), "");
-assert.ok(hubSrc.indexOf("https://api.open-meteo.com/v1/forecast?latitude=41.44&longitude=-8.29&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FLisbon&forecast_days=1") !== -1);
+// 22. Weather comes from today's Morning Brief in mirror.json, not Open-Meteo.
+function mirrorFile(day, extra) {
+  var days = {};
+  days[today] = day;
+  if (extra) Object.keys(extra).forEach(function (key) { days[key] = extra[key]; });
+  return { version: 1, days: days };
+}
+assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
+  weather: { emoji: "⛅", now_c: 17.2, min_c: 12.4, max_c: 21.2, date: today },
+  brief: "Ignore this 🌧️ 1° · 2°/3°.",
+}), today), "⛅ 17° · 12°/21°");
+assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
+  weather: { emoji: "🌨️", now_c: -1.5, min_c: -3.2, max_c: 0.4, date: today },
+}), today), "🌨️ -1° · -3°/0°");
+assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
+  weather: { emoji: "⛅", now_c: 17, min_c: 12, max_c: 21, date: "2026-10-15" },
+  brief: "⛅ 9° · 8°/10°",
+}), today), "");
+assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
+  weather: { summary: "Dry morning.", hiC: 21, loC: 12, rainMm: 0, code: 2 },
+  brief: "Walk later.\n⛅ 17° · 12°/21°\nThen training.",
+}), today), "⛅ 17° · 12°/21°");
+assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
+  brief: "2026-10-15 ⛅ 1° · 2°/3°\n⛅ 17.5° · 12.5°/20.5°",
+}), today), "⛅ 18° · 13°/21°");
+assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
+  brief: "Partly cloudy, about 17 degrees, low 12 and high 21.",
+}), today), "");
+assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
+  weather: { emoji: "⛅", now_c: 17, min_c: 12, max_c: 21, date: today },
+}), "2026-10-15"), "");
+assert.strictEqual(Hub.briefWeatherLine({
+  version: 1,
+  days: { "2026-10-15": { weather: { emoji: "⛅", now_c: 17, min_c: 12, max_c: 21, date: "2026-10-15" } } },
+}, today), "");
+assert.strictEqual(Hub.briefWeatherLine(null, today), "");
+assert.strictEqual(Hub.briefWeatherLine({}, today), "");
+assert.strictEqual(Hub.briefWeatherLine(mirrorFile({ brief: "" }), today), "");
+assert.strictEqual(hubSrc.indexOf("open-meteo.com"), -1);
+assert.strictEqual(hubSrc.indexOf("hub-weather"), -1);
+assert.ok(hubSrc.indexOf('fetchJson(cfg, "mirror")') !== -1);
 assert.ok(hubSrc.indexOf('getElementById("today-weather")') !== -1);
-assert.ok(hubSrc.indexOf("30 * 60 * 1000") !== -1);
 assert.ok(hubSrc.indexOf('node.hidden = true') !== -1);
 var greetText = html.slice(html.indexOf('class="greet-text"'), html.indexOf("data-dong-theme-toggle"));
 assert.ok(greetText.indexOf('id="today-date"') !== -1);
