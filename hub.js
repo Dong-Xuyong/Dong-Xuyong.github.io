@@ -1597,6 +1597,169 @@
     });
   }
 
+  // Guimarães via Open-Meteo (no key). A localStorage line lasts 30 minutes.
+  // A miss, a stale entry, or a bad payload hides the line.
+  var WEATHER_URL = "https://api.open-meteo.com/v1/forecast?latitude=41.44&longitude=-8.29&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FLisbon&forecast_days=1";
+  var WEATHER_CACHE_KEY = "hub-weather";
+  var WEATHER_TTL_MS = 30 * 60 * 1000;
+
+  // WMO weather interpretation codes. Unknown codes hide the line.
+  var WEATHER_EMOJI = {
+    0: "☀️",
+    1: "🌤️",
+    2: "⛅",
+    3: "☁️",
+    45: "🌫️",
+    48: "🌫️",
+    51: "🌦️",
+    53: "🌦️",
+    55: "🌦️",
+    56: "🌧️",
+    57: "🌧️",
+    61: "🌧️",
+    63: "🌧️",
+    65: "🌧️",
+    66: "🌧️",
+    67: "🌧️",
+    71: "🌨️",
+    73: "🌨️",
+    75: "🌨️",
+    77: "🌨️",
+    80: "🌦️",
+    81: "🌦️",
+    82: "🌦️",
+    85: "🌨️",
+    86: "🌨️",
+    95: "⛈️",
+    96: "⛈️",
+    99: "⛈️",
+  };
+
+  function weatherEmoji(code) {
+    var n = finiteNumber(code);
+    if (n == null) return "";
+    return WEATHER_EMOJI[Math.round(n)] || "";
+  }
+
+  function roundDegrees(value) {
+    var n = finiteNumber(value);
+    if (n == null) return null;
+    return Math.round(n);
+  }
+
+  function firstOf(list) {
+    if (!Array.isArray(list) || !list.length) return null;
+    return list[0];
+  }
+
+  // "⛅ 17° · 12°/21°". Empty when any piece is missing.
+  function weatherLine(payload) {
+    var current;
+    var daily;
+    var emoji;
+    var now;
+    var low;
+    var high;
+    if (!isRecord(payload)) return "";
+    current = payload.current;
+    daily = payload.daily;
+    if (!isRecord(current) || !isRecord(daily)) return "";
+    emoji = weatherEmoji(current.weather_code);
+    now = roundDegrees(current.temperature_2m);
+    low = roundDegrees(firstOf(daily.temperature_2m_min));
+    high = roundDegrees(firstOf(daily.temperature_2m_max));
+    if (!emoji || now == null || low == null || high == null) return "";
+    return emoji + " " + now + "° · " + low + "°/" + high + "°";
+  }
+
+  // Fresh when the stored line is non-empty and at most 30 minutes old.
+  function weatherCacheHit(raw, now) {
+    var parsed;
+    var age;
+    if (typeof raw !== "string" || raw === "") return "";
+    if (typeof now !== "number" || !isFinite(now)) return "";
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      return "";
+    }
+    if (!isRecord(parsed) || typeof parsed.line !== "string" || parsed.line === "") return "";
+    if (typeof parsed.at !== "number" || !isFinite(parsed.at)) return "";
+    age = now - parsed.at;
+    if (age < 0 || age > WEATHER_TTL_MS) return "";
+    return parsed.line;
+  }
+
+  function readWeatherCache(now) {
+    try {
+      if (!root.localStorage) return "";
+      return weatherCacheHit(root.localStorage.getItem(WEATHER_CACHE_KEY), now);
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function writeWeatherCache(line, now) {
+    try {
+      if (!root.localStorage || !line) return;
+      root.localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ at: now, line: line }));
+    } catch (e) {}
+  }
+
+  function renderWeather(line) {
+    var node;
+    if (typeof document === "undefined") return;
+    node = document.getElementById("today-weather");
+    if (!node) return;
+    if (!line) {
+      node.textContent = "";
+      node.hidden = true;
+      return;
+    }
+    node.textContent = line;
+    node.hidden = false;
+  }
+
+  function loadWeather() {
+    var now = Date.now();
+    var cached;
+    try {
+      cached = readWeatherCache(now);
+    } catch (e) {
+      cached = "";
+    }
+    if (cached) {
+      renderWeather(cached);
+      return;
+    }
+    renderWeather("");
+    if (typeof root.fetch !== "function") return;
+    root.fetch(WEATHER_URL, { cache: "no-store" }).then(
+      function (res) {
+        if (!res || !res.ok) return null;
+        return res.json().catch(function () {
+          return null;
+        });
+      },
+      function () {
+        return null;
+      }
+    ).then(
+      function (data) {
+        var line = weatherLine(data);
+        if (!line) {
+          renderWeather("");
+          return;
+        }
+        writeWeatherCache(line, Date.now());
+        renderWeather(line);
+      },
+      function () {
+        renderWeather("");
+      }
+    );
+  }
+
   function boot() {
     var now = new Date();
     var today = todayKey(now);
@@ -1604,6 +1767,7 @@
     var date = document.getElementById("today-date");
     if (hello) hello.textContent = greeting(lisbonHour(now));
     if (date) date.textContent = todayLabel(now);
+    loadWeather();
     renderMissions(today);
     loadToday(today);
   }
@@ -1634,6 +1798,9 @@
     nextGameItem: nextGameItem,
     habitsLeft: habitsLeft,
     greeting: greeting,
+    weatherEmoji: weatherEmoji,
+    weatherLine: weatherLine,
+    weatherCacheHit: weatherCacheHit,
     quoteOfDay: quoteOfDay,
     journalCardText: journalCardText,
     hideDoneCard: hideDoneCard,
