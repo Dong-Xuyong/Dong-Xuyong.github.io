@@ -7,7 +7,7 @@
 
   var MISSIONS = [
     { label: "Renew AF Braga referee medical exam (EMD)", due: "2026-10-28", area: "Admin" },
-    { label: "Car IMT inspection (91-GQ-02)", due: "2026-10-27", area: "Admin" },
+    { label: "Car IMT inspection", due: "2026-10-27", area: "Admin" },
   ];
 
   // Used only when journal.json has no usable habitDefs. Same ids as Journal.
