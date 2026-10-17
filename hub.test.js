@@ -430,8 +430,8 @@ assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=20") !== -1);
-assert.ok(html.indexOf("hub.js?v=18") !== -1);
+assert.ok(html.indexOf("styles.css?v=21") !== -1);
+assert.ok(html.indexOf("hub.js?v=19") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/reps.json") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/index.json") !== -1);
 assert.ok(hubSrc.indexOf('getItem("speaking-done:" + today) === "1"') !== -1);
@@ -480,6 +480,15 @@ assert.strictEqual(Hub.quoteOfDay({ quotes: { "2026-10-16": { text: "  Stay.\nTo
 assert.strictEqual(Hub.journalCardText(null, today), "Journal · write today");
 assert.strictEqual(Hub.journalCardText({ quotes: {} }, today), "Journal · write today");
 assert.strictEqual(Hub.journalCardText({ quotes: { "2026-10-16": { text: "Stay." } } }, today), "Stay.");
+assert.strictEqual(Hub.quoteAuthor(null, today), "");
+assert.strictEqual(Hub.quoteAuthor({ quotes: { "2026-10-16": { text: "Stay." } } }, today), "");
+assert.strictEqual(Hub.quoteAuthor({ quotes: { "2026-10-16": { text: "Stay.", author: "  Marcus Aurelius  " } } }, today), "Marcus Aurelius");
+assert.strictEqual(Hub.quoteAuthor({ quotes: { "2026-10-16": { text: "Stay.", attribution: "Seneca" } } }, today), "Seneca");
+var longQuote = "The impediment to action advances action. What stands in the way becomes the way. You have power over your mind, not outside events. Realize this, and you will find strength.";
+assert.strictEqual(Hub.quoteOfDay({ quotes: { "2026-10-16": { text: longQuote, author: "Marcus Aurelius" } } }, today), longQuote);
+assert.strictEqual(Hub.journalCardText({ quotes: { "2026-10-16": { text: longQuote, author: "Marcus Aurelius" } } }, today), longQuote + "\n— Marcus Aurelius");
+assert.strictEqual(Hub.journalCardText({ quotes: { "2026-10-16": { text: longQuote + " — Marcus Aurelius", author: "Marcus Aurelius" } } }, today), longQuote + " — Marcus Aurelius");
+assert.ok(Hub.journalCardText({ quotes: { "2026-10-16": { text: longQuote, author: "Marcus Aurelius" } } }, today).indexOf("…") === -1);
 assert.ok(html.indexOf('id="journal-card"') !== -1);
 assert.ok(html.indexOf('class="journal-card"') !== -1);
 assert.ok(html.indexOf('data-area="journal"') !== -1);
@@ -528,6 +537,16 @@ var quoteRowCss = cssRule(css, ".journal-row {");
 assert.ok(quoteRowCss.indexOf("background: transparent") !== -1);
 assert.strictEqual(quoteRowCss.indexOf("var(--area-journal) 12%"), -1);
 assert.ok(quoteRowCss.indexOf("#f2c98a") !== -1);
+function cssBlock(source, selector) {
+  var at = source.indexOf(selector);
+  assert.ok(at !== -1, selector);
+  return source.slice(at, source.indexOf("}", at) + 1);
+}
+var quoteLineCss = cssBlock(css, ".journal-line {");
+assert.strictEqual(quoteLineCss.indexOf("line-clamp"), -1);
+assert.strictEqual(quoteLineCss.indexOf("ellipsis"), -1);
+assert.strictEqual(quoteLineCss.indexOf("-webkit-box"), -1);
+assert.ok(quoteLineCss.indexOf("pre-wrap") !== -1);
 assert.ok(cssRule(css, ".alert-group summary,").indexOf(".bundle > summary") !== -1);
 assert.ok(cssRule(css, ".alert-group summary,").indexOf("min-height: 44px") !== -1);
 

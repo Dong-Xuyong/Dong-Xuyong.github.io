@@ -259,7 +259,7 @@ p {
 
 .journal-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin-top: 8px;
   min-width: 0;
@@ -280,12 +280,9 @@ p {
   color: inherit;
   font-size: 0.92rem;
   font-weight: 600;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  overflow-wrap: anywhere;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 .focus {
