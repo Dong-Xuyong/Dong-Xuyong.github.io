@@ -596,6 +596,25 @@ assert.strictEqual(Hub.hubWeatherLine(mirrorFile({
 assert.strictEqual(Hub.hubWeatherLine(null, today), "");
 assert.strictEqual(Hub.hubWeatherLine({}, today), "");
 assert.strictEqual(Hub.hubWeatherLine(mirrorFile({}), today), "");
+assert.strictEqual(Hub.hubWeatherLine({
+  version: 1,
+  days: {
+    "2026-10-17": {
+      hubWeather: {
+        date: "2026-10-17",
+        tempC: 21,
+        minC: 13,
+        maxC: 24,
+        emoji: "🌤️",
+        updatedAt: "2026-10-17T07:00:00Z",
+      },
+    },
+  },
+}, "2026-10-17"), "🌤️ 21° · 13°/24°");
+assert.ok(html.indexOf('href="/mirror/"><span class="row-emoji" aria-hidden="true">📖</span>News</a>') !== -1);
+assert.strictEqual(html.indexOf("Morning Brief"), -1);
+assert.ok(hubSrc.indexOf('"Morning journal"') !== -1);
+assert.ok(hubSrc.indexOf('fetchJson(cfg, "mirror")') !== -1);
 assert.strictEqual(hubSrc.indexOf("open-meteo.com"), -1);
 assert.strictEqual(hubSrc.indexOf("hub-weather"), -1);
 assert.strictEqual(hubSrc.indexOf("now_c"), -1);
