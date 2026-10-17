@@ -1599,19 +1599,13 @@
     });
   }
 
-  // Morning Brief: progress-sync file mirror.json, read with the same
-  // GhSync.fetchJson(cfg, "mirror") call as the other logs. Today's Lisbon
-  // day is days["YYYY-MM-DD"]. Prefer weather { emoji, now_c, min_c, max_c, date }
-  // when date is today. Otherwise a "⛅ 17° · 12°/21°" line inside brief.
+  // Morning Brief: progress-sync mirror.json via GhSync.fetchJson(cfg, "mirror").
+  // days[today].hubWeather is { date, tempC, minC, maxC, emoji, updatedAt }.
+  // today is the Europe/Lisbon date. Hide when the object or date does not match.
   function roundDegrees(value) {
     var n = finiteNumber(value);
     if (n == null) return null;
     return Math.round(n);
-  }
-
-  function formatWeatherLine(emoji, now, low, high) {
-    if (!emoji || now == null || low == null || high == null) return "";
-    return emoji + " " + now + "° · " + low + "°/" + high + "°";
   }
 
   function isWeatherEmoji(token) {
@@ -1623,57 +1617,25 @@
     return true;
   }
 
-  // null when the preferred object is absent. "" when it is present but not today's.
-  function structuredWeatherLine(weather, today) {
+  function hubWeatherLine(file, today) {
+    var day;
+    var weather;
     var emoji;
     var now;
     var low;
     var high;
-    if (!isRecord(weather) || typeof weather.date !== "string") return null;
-    if (weather.date !== today) return "";
-    emoji = typeof weather.emoji === "string" ? weather.emoji.trim() : "";
-    now = roundDegrees(weather.now_c);
-    low = roundDegrees(weather.min_c);
-    high = roundDegrees(weather.max_c);
-    if (!isWeatherEmoji(emoji) || now == null || low == null || high == null) return "";
-    return formatWeatherLine(emoji, now, low, high);
-  }
-
-  function weatherTextLine(brief, today) {
-    var re = /(\S+)\s+(-?\d+(?:\.\d+)?)°\s*·\s*(-?\d+(?:\.\d+)?)°\s*\/\s*(-?\d+(?:\.\d+)?)°/g;
-    var match;
-    if (typeof brief !== "string" || !brief) return "";
-    while ((match = re.exec(brief))) {
-      var lineStart = brief.lastIndexOf("\n", match.index);
-      var lineEnd = brief.indexOf("\n", match.index);
-      var line = brief.slice(lineStart + 1, lineEnd === -1 ? brief.length : lineEnd);
-      var dates = line.match(/\d{4}-\d{2}-\d{2}/g);
-      var emoji;
-      var now;
-      var low;
-      var high;
-      if (dates && dates.indexOf(today) === -1) continue;
-      emoji = match[1];
-      if (!isWeatherEmoji(emoji)) continue;
-      now = roundDegrees(match[2]);
-      low = roundDegrees(match[3]);
-      high = roundDegrees(match[4]);
-      if (now == null || low == null || high == null) continue;
-      return formatWeatherLine(emoji.trim(), now, low, high);
-    }
-    return "";
-  }
-
-  function briefWeatherLine(file, today) {
-    var day;
-    var structured;
     if (typeof today !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(today)) return "";
     if (!isRecord(file) || !isRecord(file.days)) return "";
     day = file.days[today];
-    if (!isRecord(day)) return "";
-    structured = structuredWeatherLine(day.weather, today);
-    if (structured != null) return structured;
-    return weatherTextLine(day.brief, today);
+    if (!isRecord(day) || !isRecord(day.hubWeather)) return "";
+    weather = day.hubWeather;
+    if (weather.date !== today) return "";
+    emoji = typeof weather.emoji === "string" ? weather.emoji.trim() : "";
+    now = roundDegrees(weather.tempC);
+    low = roundDegrees(weather.minC);
+    high = roundDegrees(weather.maxC);
+    if (!isWeatherEmoji(emoji) || now == null || low == null || high == null) return "";
+    return emoji + " " + now + "° · " + low + "°/" + high + "°";
   }
 
   function renderWeather(line) {
@@ -1695,7 +1657,7 @@
     if (!cfg || !root.GhSync || typeof root.GhSync.fetchJson !== "function") return;
     root.GhSync.fetchJson(cfg, "mirror").then(
       function (data) {
-        renderWeather(briefWeatherLine(data, today));
+        renderWeather(hubWeatherLine(data, today));
       },
       function () {
         renderWeather("");
@@ -1740,7 +1702,7 @@
     nextGameItem: nextGameItem,
     habitsLeft: habitsLeft,
     greeting: greeting,
-    briefWeatherLine: briefWeatherLine,
+    hubWeatherLine: hubWeatherLine,
     quoteOfDay: quoteOfDay,
     journalCardText: journalCardText,
     hideDoneCard: hideDoneCard,

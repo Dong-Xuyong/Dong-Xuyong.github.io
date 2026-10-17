@@ -431,7 +431,7 @@ assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
 assert.ok(html.indexOf("styles.css?v=18") !== -1);
-assert.ok(html.indexOf("hub.js?v=16") !== -1);
+assert.ok(html.indexOf("hub.js?v=17") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/reps.json") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/index.json") !== -1);
 assert.ok(hubSrc.indexOf('getItem("speaking-done:" + today) === "1"') !== -1);
@@ -546,46 +546,60 @@ var bundleTag = html.slice(bundleStart, html.indexOf(">", bundleStart) + 1);
 assert.strictEqual(bundleTag.indexOf("open"), -1);
 assert.ok(hubSrc.indexOf('classList.toggle("is-soon", missionUrgent(bundleMissions))') !== -1);
 
-// 22. Weather comes from today's Morning Brief in mirror.json, not Open-Meteo.
+// 22. Greeting weather is days[today].hubWeather from mirror.json.
 function mirrorFile(day, extra) {
   var days = {};
   days[today] = day;
   if (extra) Object.keys(extra).forEach(function (key) { days[key] = extra[key]; });
   return { version: 1, days: days };
 }
-assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
-  weather: { emoji: "⛅", now_c: 17.2, min_c: 12.4, max_c: 21.2, date: today },
-  brief: "Ignore this 🌧️ 1° · 2°/3°.",
-}), today), "⛅ 17° · 12°/21°");
-assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
-  weather: { emoji: "🌨️", now_c: -1.5, min_c: -3.2, max_c: 0.4, date: today },
-}), today), "🌨️ -1° · -3°/0°");
-assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
-  weather: { emoji: "⛅", now_c: 17, min_c: 12, max_c: 21, date: "2026-10-15" },
+assert.strictEqual(Hub.hubWeatherLine(mirrorFile({
+  hubWeather: {
+    date: today,
+    tempC: 14,
+    minC: 10,
+    maxC: 19,
+    emoji: "🌤️",
+    updatedAt: "2026-10-16T07:00:00Z",
+  },
+  weather: { emoji: "⛅", now_c: 1, min_c: 2, max_c: 3, date: today },
   brief: "⛅ 9° · 8°/10°",
+}), today), "🌤️ 14° · 10°/19°");
+assert.strictEqual(Hub.hubWeatherLine(mirrorFile({
+  hubWeather: { date: today, tempC: 14.4, minC: 9.6, maxC: 19.2, emoji: "🌤️", updatedAt: "2026-10-16T07:00:00Z" },
+}), today), "🌤️ 14° · 10°/19°");
+assert.strictEqual(Hub.hubWeatherLine(mirrorFile({
+  hubWeather: { date: today, tempC: -1.5, minC: -3.2, maxC: 0.4, emoji: "🌨️", updatedAt: "2026-10-16T07:00:00Z" },
+}), today), "🌨️ -1° · -3°/0°");
+assert.strictEqual(Hub.hubWeatherLine(mirrorFile({
+  hubWeather: { date: "2026-10-15", tempC: 14, minC: 10, maxC: 19, emoji: "🌤️", updatedAt: "2026-10-15T07:00:00Z" },
+  brief: "🌤️ 14° · 10°/19°",
 }), today), "");
-assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
-  weather: { summary: "Dry morning.", hiC: 21, loC: 12, rainMm: 0, code: 2 },
-  brief: "Walk later.\n⛅ 17° · 12°/21°\nThen training.",
-}), today), "⛅ 17° · 12°/21°");
-assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
-  brief: "2026-10-15 ⛅ 1° · 2°/3°\n⛅ 17.5° · 12.5°/20.5°",
-}), today), "⛅ 18° · 13°/21°");
-assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
-  brief: "Partly cloudy, about 17 degrees, low 12 and high 21.",
+assert.strictEqual(Hub.hubWeatherLine(mirrorFile({
+  weather: { summary: "Dry morning.", hiC: 21, loC: 12, code: 2 },
+  brief: "🌤️ 14° · 10°/19°",
 }), today), "");
-assert.strictEqual(Hub.briefWeatherLine(mirrorFile({
-  weather: { emoji: "⛅", now_c: 17, min_c: 12, max_c: 21, date: today },
+assert.strictEqual(Hub.hubWeatherLine(mirrorFile({
+  hubWeather: { date: today, tempC: 14, minC: 10, maxC: 19, emoji: "🌤️", updatedAt: "2026-10-16T07:00:00Z" },
 }), "2026-10-15"), "");
-assert.strictEqual(Hub.briefWeatherLine({
+assert.strictEqual(Hub.hubWeatherLine({
   version: 1,
-  days: { "2026-10-15": { weather: { emoji: "⛅", now_c: 17, min_c: 12, max_c: 21, date: "2026-10-15" } } },
+  days: {
+    "2026-10-15": {
+      hubWeather: { date: "2026-10-15", tempC: 14, minC: 10, maxC: 19, emoji: "🌤️", updatedAt: "2026-10-15T07:00:00Z" },
+    },
+  },
 }, today), "");
-assert.strictEqual(Hub.briefWeatherLine(null, today), "");
-assert.strictEqual(Hub.briefWeatherLine({}, today), "");
-assert.strictEqual(Hub.briefWeatherLine(mirrorFile({ brief: "" }), today), "");
+assert.strictEqual(Hub.hubWeatherLine(mirrorFile({
+  hubWeather: { date: today, minC: 10, maxC: 19, emoji: "🌤️", updatedAt: "2026-10-16T07:00:00Z" },
+}), today), "");
+assert.strictEqual(Hub.hubWeatherLine(null, today), "");
+assert.strictEqual(Hub.hubWeatherLine({}, today), "");
+assert.strictEqual(Hub.hubWeatherLine(mirrorFile({}), today), "");
 assert.strictEqual(hubSrc.indexOf("open-meteo.com"), -1);
 assert.strictEqual(hubSrc.indexOf("hub-weather"), -1);
+assert.strictEqual(hubSrc.indexOf("now_c"), -1);
+assert.ok(hubSrc.indexOf("day.hubWeather") !== -1);
 assert.ok(hubSrc.indexOf('fetchJson(cfg, "mirror")') !== -1);
 assert.ok(hubSrc.indexOf('getElementById("today-weather")') !== -1);
 assert.ok(hubSrc.indexOf('node.hidden = true') !== -1);
