@@ -430,7 +430,7 @@ assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=19") !== -1);
+assert.ok(html.indexOf("styles.css?v=20") !== -1);
 assert.ok(html.indexOf("hub.js?v=18") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/reps.json") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/index.json") !== -1);
@@ -524,6 +524,10 @@ function cssRule(source, selector) {
   return source.slice(at, at + 700);
 }
 assert.ok(cssRule(css, ".journal-card {").indexOf("min-height: 44px") !== -1);
+var quoteRowCss = cssRule(css, ".journal-row {");
+assert.ok(quoteRowCss.indexOf("background: transparent") !== -1);
+assert.strictEqual(quoteRowCss.indexOf("var(--area-journal) 12%"), -1);
+assert.ok(quoteRowCss.indexOf("#f2c98a") !== -1);
 assert.ok(cssRule(css, ".alert-group summary,").indexOf(".bundle > summary") !== -1);
 assert.ok(cssRule(css, ".alert-group summary,").indexOf("min-height: 44px") !== -1);
 

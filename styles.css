@@ -261,11 +261,10 @@ p {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 10px -58px -12px -14px;
-  padding: 8px 14px 8px 10px;
-  border-top: 1px solid color-mix(in srgb, var(--area-journal-ink) 35%, transparent);
-  background: color-mix(in srgb, var(--area-journal) 12%, hsl(var(--card) / 0.96));
-  color: var(--area-journal-ink);
+  margin-top: 8px;
+  min-width: 0;
+  background: transparent;
+  color: #f2c98a;
 }
 
 .journal-art {
