@@ -192,6 +192,19 @@ p {
   font-size: 0.84rem;
 }
 
+/* The greeting shade is dark in both themes. #b8b8b8 is the shell kit's
+   muted ink on dark (--dx-muted); the light muted ink fails contrast here. */
+.greet .greet-weather {
+  margin-top: 2px;
+  color: #b8b8b8;
+  font-size: 0.84rem;
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .greet .dong-theme-toggle {
   position: relative;
   top: auto;

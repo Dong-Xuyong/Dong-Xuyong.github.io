@@ -430,8 +430,8 @@ assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=17") !== -1);
-assert.ok(html.indexOf("hub.js?v=14") !== -1);
+assert.ok(html.indexOf("styles.css?v=18") !== -1);
+assert.ok(html.indexOf("hub.js?v=15") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/reps.json") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/index.json") !== -1);
 assert.ok(hubSrc.indexOf('getItem("speaking-done:" + today) === "1"') !== -1);
@@ -545,5 +545,89 @@ assert.ok(bundleStart !== -1);
 var bundleTag = html.slice(bundleStart, html.indexOf(">", bundleStart) + 1);
 assert.strictEqual(bundleTag.indexOf("open"), -1);
 assert.ok(hubSrc.indexOf('classList.toggle("is-soon", missionUrgent(bundleMissions))') !== -1);
+
+// 22. Guimarães weather: WMO emoji, "⛅ 17° · 12°/21°", 30 min cache, hide on failure.
+var weatherEmoji = {
+  0: "☀️",
+  1: "🌤️",
+  2: "⛅",
+  3: "☁️",
+  45: "🌫️",
+  48: "🌫️",
+  51: "🌦️",
+  53: "🌦️",
+  55: "🌦️",
+  56: "🌧️",
+  57: "🌧️",
+  61: "🌧️",
+  63: "🌧️",
+  65: "🌧️",
+  66: "🌧️",
+  67: "🌧️",
+  71: "🌨️",
+  73: "🌨️",
+  75: "🌨️",
+  77: "🌨️",
+  80: "🌦️",
+  81: "🌦️",
+  82: "🌦️",
+  85: "🌨️",
+  86: "🌨️",
+  95: "⛈️",
+  96: "⛈️",
+  99: "⛈️",
+};
+Object.keys(weatherEmoji).forEach(function (code) {
+  assert.strictEqual(Hub.weatherEmoji(+code), weatherEmoji[code], code);
+});
+assert.strictEqual(Hub.weatherEmoji("2"), "⛅");
+assert.strictEqual(Hub.weatherEmoji(2.4), "⛅");
+assert.strictEqual(Hub.weatherEmoji(null), "");
+assert.strictEqual(Hub.weatherEmoji(4), "");
+assert.strictEqual(Hub.weatherEmoji(100), "");
+assert.strictEqual(Hub.weatherLine({
+  current: { temperature_2m: 17.2, weather_code: 2 },
+  daily: { temperature_2m_min: [12.4], temperature_2m_max: [21.2] },
+}), "⛅ 17° · 12°/21°");
+assert.strictEqual(Hub.weatherLine({
+  current: { temperature_2m: -1.5, weather_code: 71 },
+  daily: { temperature_2m_min: [-3.2], temperature_2m_max: [0.4] },
+}), "🌨️ -1° · -3°/0°");
+assert.strictEqual(Hub.weatherLine({
+  current: { temperature_2m: 17.5, weather_code: 0 },
+  daily: { temperature_2m_min: [12.5], temperature_2m_max: [20.5] },
+}), "☀️ 18° · 13°/21°");
+assert.strictEqual(Hub.weatherLine(null), "");
+assert.strictEqual(Hub.weatherLine({}), "");
+assert.strictEqual(Hub.weatherLine({ current: { temperature_2m: 17, weather_code: 2 } }), "");
+assert.strictEqual(Hub.weatherLine({
+  current: { temperature_2m: 17, weather_code: 4 },
+  daily: { temperature_2m_min: [12], temperature_2m_max: [21] },
+}), "");
+assert.strictEqual(Hub.weatherLine({
+  current: { weather_code: 2 },
+  daily: { temperature_2m_min: [12], temperature_2m_max: [21] },
+}), "");
+var weatherSample = JSON.stringify({ at: 1000, line: "⛅ 17° · 12°/21°" });
+assert.strictEqual(Hub.weatherCacheHit(weatherSample, 1000), "⛅ 17° · 12°/21°");
+assert.strictEqual(Hub.weatherCacheHit(weatherSample, 1000 + 30 * 60 * 1000), "⛅ 17° · 12°/21°");
+assert.strictEqual(Hub.weatherCacheHit(weatherSample, 1000 + 30 * 60 * 1000 + 1), "");
+assert.strictEqual(Hub.weatherCacheHit(weatherSample, 999), "");
+assert.strictEqual(Hub.weatherCacheHit("nope", 1000), "");
+assert.strictEqual(Hub.weatherCacheHit("", 1000), "");
+assert.strictEqual(Hub.weatherCacheHit(JSON.stringify({ at: 1000, line: "" }), 1000), "");
+assert.ok(hubSrc.indexOf("https://api.open-meteo.com/v1/forecast?latitude=41.44&longitude=-8.29&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FLisbon&forecast_days=1") !== -1);
+assert.ok(hubSrc.indexOf('getElementById("today-weather")') !== -1);
+assert.ok(hubSrc.indexOf("30 * 60 * 1000") !== -1);
+assert.ok(hubSrc.indexOf('node.hidden = true') !== -1);
+var greetText = html.slice(html.indexOf('class="greet-text"'), html.indexOf("data-dong-theme-toggle"));
+assert.ok(greetText.indexOf('id="today-date"') !== -1);
+assert.ok(greetText.indexOf('id="today-weather"') > greetText.indexOf('id="today-date"'));
+assert.ok(greetText.indexOf('class="greet-weather"') !== -1);
+assert.ok(/\shidden[\s>]/.test(greetText.slice(greetText.indexOf("today-weather"), greetText.indexOf("today-weather") + 80)));
+var weatherCss = cssRule(css, ".greet .greet-weather {");
+assert.ok(weatherCss.indexOf("#b8b8b8") !== -1);
+assert.ok(weatherCss.indexOf("white-space: nowrap") !== -1);
+assert.ok(weatherCss.indexOf("text-overflow: ellipsis") !== -1);
 
 console.log("hub.test.js: ok");
