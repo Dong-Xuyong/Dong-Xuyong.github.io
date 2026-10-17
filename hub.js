@@ -1665,6 +1665,20 @@
     );
   }
 
+  // The theme switch sits on the journal link. Stop the click here so the
+  // toggle changes theme and the card does not open /journal/.
+  function bindJournalCard() {
+    var toggle = document.querySelector(".greet [data-dong-theme-toggle]");
+    if (!toggle || toggle.getAttribute("data-journal-bound") === "1") return;
+    toggle.setAttribute("data-journal-bound", "1");
+    toggle.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
+    toggle.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") event.stopPropagation();
+    });
+  }
+
   function boot() {
     var now = new Date();
     var today = todayKey(now);
@@ -1672,6 +1686,7 @@
     var date = document.getElementById("today-date");
     if (hello) hello.textContent = greeting(lisbonHour(now));
     if (date) date.textContent = todayLabel(now);
+    bindJournalCard();
     renderMissions(today);
     loadToday(today);
   }

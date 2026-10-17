@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
   <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dong-ui/theme.css?v=5" />
-  <link rel="stylesheet" href="styles.css?v=18" />
+  <link rel="stylesheet" href="styles.css?v=19" />
   <style>
     .boot {
       position: fixed;
@@ -46,21 +46,24 @@
     </svg>
   </div>
   <main>
-    <header class="greet">
-      <img class="greet-banner" src="assets/art/banner.webp" alt="" width="1200" height="400" />
-      <div class="greet-shade" aria-hidden="true"></div>
-      <div class="greet-text">
-        <h1 id="greet-title"><span id="greet-hello">Good morning</span>, Dong</h1>
-        <p id="today-date"></p>
-        <p id="today-weather" class="greet-weather" hidden></p>
-      </div>
+    <div class="greet">
+      <a class="journal-card" id="journal-card" href="/journal/" data-area="journal">
+        <img class="greet-banner" src="assets/art/banner.webp" alt="" width="1200" height="400" />
+        <div class="greet-shade" aria-hidden="true"></div>
+        <div class="greet-text">
+          <h1 id="greet-title"><span id="greet-hello">Good morning</span>, Dong</h1>
+          <p class="greet-meta">
+            <span id="today-date"></span>
+            <span id="today-weather" class="greet-weather" hidden></span>
+          </p>
+          <span class="journal-row">
+            <img class="journal-art" src="assets/art/journal.webp" alt="" width="32" height="32" decoding="async" />
+            <span class="journal-line" id="journal-line">Journal · write today</span>
+          </span>
+        </div>
+      </a>
       <button type="button" data-dong-theme-toggle aria-label="Toggle color theme"></button>
-    </header>
-
-    <a class="journal-card" id="journal-card" href="/journal/" data-area="journal">
-      <img class="journal-art" src="assets/art/journal.webp" alt="" width="36" height="36" decoding="async" />
-      <span class="journal-line" id="journal-line">Journal · write today</span>
-    </a>
+    </div>
 
     <section id="focus" class="focus" aria-live="polite"></section>
     <details class="sheet bundle" id="bundle" hidden>
@@ -162,7 +165,7 @@
     </details>
   </main>
   <script src="dong-ui/gh-sync.js?v=1"></script>
-  <script src="hub.js?v=17"></script>
+  <script src="hub.js?v=18"></script>
   <script>
     (function () {
       var el = document.querySelector(".boot");
