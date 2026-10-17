@@ -193,22 +193,44 @@
     return isRecord(entry) ? entry : null;
   }
 
-  // journal.json quotes["YYYY-MM-DD"].text. Same field as Journal
-  // (Dong-Xuyong/journal). Empty when the day has no quote.
+  // journal.json quotes["YYYY-MM-DD"].text, and .author when that string
+  // is set. Same file as Journal (Dong-Xuyong/journal). Empty when the day
+  // has no quote. The card shows the whole quote and author.
   var JOURNAL_CARD_EMPTY = "Journal · write today";
 
-  function quoteOfDay(file, today) {
+  function dayQuote(file, today) {
     var quote;
-    var text;
-    if (!isRecord(file) || !isRecord(file.quotes)) return "";
+    if (!isRecord(file) || !isRecord(file.quotes)) return null;
     quote = file.quotes[today];
-    if (!isRecord(quote) || typeof quote.text !== "string") return "";
+    return isRecord(quote) ? quote : null;
+  }
+
+  function quoteOfDay(file, today) {
+    var quote = dayQuote(file, today);
+    var text;
+    if (!quote || typeof quote.text !== "string") return "";
     text = quote.text.replace(/\s+/g, " ").trim();
     return text;
   }
 
+  function quoteAuthor(file, today) {
+    var quote = dayQuote(file, today);
+    var author;
+    if (!quote) return "";
+    author = quote.author;
+    if (typeof author !== "string") author = quote.attribution;
+    if (typeof author !== "string") return "";
+    return author.replace(/\s+/g, " ").trim();
+  }
+
   function journalCardText(file, today) {
-    return quoteOfDay(file, today) || JOURNAL_CARD_EMPTY;
+    var text = quoteOfDay(file, today);
+    var author;
+    if (!text) return JOURNAL_CARD_EMPTY;
+    author = quoteAuthor(file, today);
+    if (!author) return text;
+    if (text.toLowerCase().indexOf(author.toLowerCase()) !== -1) return text;
+    return text + "\n— " + author;
   }
 
   function sectionFilled(entry, keys) {
@@ -1719,6 +1741,7 @@
     greeting: greeting,
     hubWeatherLine: hubWeatherLine,
     quoteOfDay: quoteOfDay,
+    quoteAuthor: quoteAuthor,
     journalCardText: journalCardText,
     hideDoneCard: hideDoneCard,
     bundleSummary: bundleSummary,
