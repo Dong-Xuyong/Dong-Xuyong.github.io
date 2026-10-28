@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
   <link href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="dong-ui/theme.css?v=5" />
-  <link rel="stylesheet" href="styles.css?v=21" />
+  <link rel="stylesheet" href="styles.css?v=22" />
   <style>
     .boot {
       position: fixed;
@@ -66,11 +66,7 @@
     </div>
 
     <section id="focus" class="focus" aria-live="polite"></section>
-    <details class="sheet bundle" id="bundle" hidden>
-      <summary id="bundle-summary"><span class="row-label" id="bundle-label">0 missing</span></summary>
-      <div id="alerts" class="alerts" aria-label="Alerts"></div>
-      <div id="missions" class="missions" hidden></div>
-    </details>
+    <div id="missions" class="missions" hidden aria-label="Pendentes"></div>
 
     <nav class="tiles" aria-label="Main apps">
       <a class="tile" data-tile="wiki-insights" href="/wiki-flashcards/insights/" data-area="wiki-insights">
@@ -165,7 +161,7 @@
     </details>
   </main>
   <script src="dong-ui/gh-sync.js?v=1"></script>
-  <script src="hub.js?v=19"></script>
+  <script src="hub.js?v=20"></script>
   <script>
     (function () {
       var el = document.querySelector(".boot");

@@ -303,13 +303,13 @@ var missionGroups = Hub.groupMissions(missionRows);
 assert.deepStrictEqual(missionGroups.map(function (group) { return group.area; }), ["Admin", "Crew"]);
 assert.ok(missionGroups[0].items.length >= 2);
 assert.strictEqual(missionGroups[1].items.length, 3);
-assert.strictEqual(Hub.missionHeadline(Hub.activeMissions(today)), "Missions · 2 · next in 11d");
+assert.strictEqual(Hub.missionHeadline(Hub.activeMissions(today)), "Pendentes · 2 · next in 11d");
 assert.strictEqual(Hub.missionUrgent(Hub.activeMissions(today)), false);
 assert.strictEqual(Hub.missionUrgent([{ days: 3 }, { days: 11 }]), true);
 assert.strictEqual(Hub.missionUrgent([{ days: 4 }]), false);
 assert.strictEqual(Hub.missionUrgent([{ days: -1 }]), true);
-assert.strictEqual(Hub.missionHeadline([{ days: 0 }, { days: 4 }]), "Missions · 2 · today");
-assert.strictEqual(Hub.missionHeadline([{ days: -2 }]), "Missions · 1 · overdue");
+assert.strictEqual(Hub.missionHeadline([{ days: 0 }, { days: 4 }]), "Pendentes · 2 · today");
+assert.strictEqual(Hub.missionHeadline([{ days: -2 }]), "Pendentes · 1 · overdue");
 assert.deepStrictEqual(Hub.groupMissions(crew.map(function (row) {
   return { label: row.label, due: row.due, days: 1, area: row.area };
 })).map(function (group) { return group.area; }), ["Crew"]);
@@ -430,8 +430,8 @@ assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=21") !== -1);
-assert.ok(html.indexOf("hub.js?v=19") !== -1);
+assert.ok(html.indexOf("styles.css?v=22") !== -1);
+assert.ok(html.indexOf("hub.js?v=20") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/reps.json") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/index.json") !== -1);
 assert.ok(hubSrc.indexOf('getItem("speaking-done:" + today) === "1"') !== -1);
@@ -550,7 +550,8 @@ assert.ok(quoteLineCss.indexOf("pre-wrap") !== -1);
 assert.ok(cssRule(css, ".alert-group summary,").indexOf(".bundle > summary") !== -1);
 assert.ok(cssRule(css, ".alert-group summary,").indexOf("min-height: 44px") !== -1);
 
-// 21. Alerts and missions share one collapsed section. Urgent missions redden its summary.
+// 21. The today-checks sheet is off the home screen. Pendentes is its own list.
+// bundleSummary still names areas for the old header; the page no longer paints it.
 assert.strictEqual(Hub.bundleSummary(
   [{ id: "morning" }, { id: "chinese" }, { id: "next-game" }],
   []
@@ -566,17 +567,21 @@ assert.strictEqual(Hub.bundleSummary(
 assert.strictEqual(Hub.bundleSummary([{ id: "piano" }], []), "1 missing · 🎹 Practice");
 assert.strictEqual(Hub.bundleSummary([], []), "0 missing");
 assert.strictEqual(Hub.bundleSummary(null, null), "0 missing");
-assert.ok(html.indexOf('id="bundle"') !== -1);
-assert.ok(html.indexOf('class="sheet bundle"') !== -1);
-assert.ok(html.indexOf(">0 missing<") !== -1);
-assert.ok(html.indexOf('id="bundle"') < html.indexOf('id="alerts"'));
-assert.ok(html.indexOf('id="alerts"') < html.indexOf('id="missions"'));
+assert.strictEqual(html.indexOf('id="bundle"'), -1);
+assert.strictEqual(html.indexOf('id="alerts"'), -1);
+assert.strictEqual(html.indexOf('id="bundle-label"'), -1);
+assert.strictEqual(html.indexOf(">0 missing<"), -1);
+assert.strictEqual(html.indexOf("missing"), -1);
+assert.ok(html.indexOf('id="focus"') < html.indexOf('id="missions"'));
 assert.ok(html.indexOf('id="missions"') < html.indexOf('class="tiles"'));
-var bundleStart = html.indexOf('<details class="sheet bundle"');
-assert.ok(bundleStart !== -1);
-var bundleTag = html.slice(bundleStart, html.indexOf(">", bundleStart) + 1);
-assert.strictEqual(bundleTag.indexOf("open"), -1);
+assert.ok(html.indexOf('aria-label="Pendentes"') !== -1);
+assert.ok(hubSrc.indexOf('return "Pendentes · "') !== -1);
+assert.strictEqual(hubSrc.indexOf("Missions · "), -1);
+assert.ok(hubSrc.indexOf('summary.setAttribute("aria-label", headline)') !== -1);
 assert.ok(hubSrc.indexOf('classList.toggle("is-soon", missionUrgent(bundleMissions))') !== -1);
+assert.strictEqual(hubSrc.indexOf("renderAlerts"), -1);
+assert.strictEqual(hubSrc.indexOf('getElementById("alerts")'), -1);
+assert.strictEqual(hubSrc.indexOf("alert-group"), -1);
 
 // 22. Greeting weather is days[today].hubWeather from mirror.json.
 function mirrorFile(day, extra) {
@@ -665,3 +670,4 @@ assert.ok(weatherCss.indexOf("white-space: nowrap") !== -1);
 assert.ok(weatherCss.indexOf("text-overflow: ellipsis") !== -1);
 
 console.log("hub.test.js: ok");
+require("child_process").execFileSync(process.execPath, [require("path").join(__dirname, "hub.render.test.js")], { stdio: "inherit" });

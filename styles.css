@@ -416,6 +416,10 @@ html.dark .badge.badge-soon {
   gap: 8px;
 }
 
+.missions {
+  margin-top: 12px;
+}
+
 .bundle > .alerts,
 .bundle > .missions {
   padding: 0 8px 8px;
@@ -425,6 +429,7 @@ html.dark .badge.badge-soon {
 .missions:empty,
 .missions[hidden] {
   display: none;
+  margin-top: 0;
   padding: 0;
 }
 

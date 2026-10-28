@@ -1,6 +1,6 @@
 /**
  * Phone hub for dong-xuyong.github.io.
- * Today checks are read-only. Missions is the editable deadline list.
+ * Today checks feed the focus card and tiles. Pendentes is the deadline list.
  */
 (function (root) {
   "use strict";
@@ -1147,7 +1147,7 @@
     if (next.days < 0) when = "overdue";
     else if (next.days === 0) when = "today";
     else when = "next in " + next.days + "d";
-    return "Missions · " + rows.length + " · " + when;
+    return "Pendentes · " + rows.length + " · " + when;
   }
 
   function missionUrgent(rows) {
@@ -1307,6 +1307,7 @@
     var rows = activeMissions(today, extra);
     var details;
     var summary;
+    var headline;
     var groups;
     bundleMissions = rows;
     if (!host) {
@@ -1320,9 +1321,12 @@
       return;
     }
     host.hidden = false;
+    headline = missionHeadline(rows);
     details = el("details", "sheet missions-details");
     summary = el("summary", missionUrgent(rows) ? "is-soon" : "");
-    summary.appendChild(el("span", "row-label", missionHeadline(rows)));
+    summary.title = headline;
+    summary.setAttribute("aria-label", headline);
+    summary.appendChild(el("span", "row-label", headline));
     details.appendChild(summary);
     groups = groupMissions(rows);
     groups.forEach(function (group) {
@@ -1429,34 +1433,6 @@
     return node;
   }
 
-  function renderAlerts(items) {
-    var host = document.getElementById("alerts");
-    var groups;
-    bundleAlerts = Array.isArray(items) ? items : [];
-    if (!host) {
-      paintBundle();
-      return;
-    }
-    host.textContent = "";
-    groups = groupItems(bundleAlerts);
-    groups.forEach(function (group) {
-      var details = el("details", "sheet alert-group");
-      var summary = el("summary");
-      var list = el("ul", "line-list");
-      details.setAttribute("data-area", areaSlug(group.area));
-      summary.appendChild(el("span", "row-label", alertHeadline(group.area, group.items.length)));
-      details.appendChild(summary);
-      group.items.forEach(function (row) {
-        var li = el("li");
-        li.appendChild(lineRow(row, row.badge, false));
-        list.appendChild(li);
-      });
-      details.appendChild(list);
-      host.appendChild(details);
-    });
-    paintBundle();
-  }
-
   function renderJournal(text) {
     var card = document.getElementById("journal-card");
     var node = document.getElementById("journal-line");
@@ -1536,7 +1512,6 @@
     if (!cfg) {
       renderJournal(JOURNAL_CARD_EMPTY);
       renderFocus({ connected: false });
-      renderAlerts([]);
       renderTiles(neutralTiles());
       renderWeather("");
       return;
@@ -1544,7 +1519,6 @@
 
     renderJournal(JOURNAL_CARD_EMPTY);
     renderFocus({ connected: true, loading: true });
-    renderAlerts([]);
     loadBriefWeather(cfg, today);
 
     root.GhSync.fetchJson(cfg, "crew-log").then(
@@ -1582,7 +1556,6 @@
       var failed = [];
       var report;
       var focus;
-      var alerts = [];
       results.forEach(function (result) {
         sources[result.key] = result.data;
         if (result.key === "speakingPublic") {
@@ -1606,7 +1579,6 @@
       });
       report = missingItems(sources, today, hour);
       focus = focusItem(report.items, hour);
-      alerts = rowsForAlerts(report.items, focus && focus.id);
       renderJournal(sources.journalError ? JOURNAL_CARD_EMPTY : journalCardText(sources.journal, today));
       renderFocus({
         connected: true,
@@ -1616,7 +1588,6 @@
         hideDone: hideDoneCard(report.items, hour),
         note: failed.length ? "Some logs could not be read." : "",
       });
-      renderAlerts(alerts);
       renderTiles(tileCounts(sources, report, today));
     });
   }
