@@ -1,6 +1,7 @@
 /**
  * Phone hub for dong-xuyong.github.io.
- * Today checks feed the focus card and tiles. Pendentes is the deadline list.
+ * Today checks feed the app tiles. Pendentes is the deadline list.
+ * The home does not paint a daily-goal Go banner.
  */
 (function (root) {
   "use strict";
@@ -999,9 +1000,9 @@
     return area && PALETTE_AREAS[area] ? area : "";
   }
 
-  // Morning is the focus only before noon. Evening joins the list from 18:00,
-  // matching missingItems. Wiki due is a row under Study, not a focus card.
-  // Anything else in this list is always eligible.
+  // Priority among today checks. The home does not paint a Go card from this
+  // list; tiles still read the rows. Morning is eligible only before noon.
+  // Evening joins from 18:00, matching missingItems. Wiki due is not in this list.
   var FOCUS_IDS = [
     "morning",
     "training",
@@ -1346,76 +1347,6 @@
     paintBundle();
   }
 
-  function speakingDoneCard() {
-    var mark = rowVisual("speaking");
-    var card = el("a", "focus-card");
-    var check;
-    card.href = "/speaking-analysis/";
-    card.setAttribute("data-speaking-card", "done");
-    if (mark && paletteArea(mark.area)) card.setAttribute("data-area", paletteArea(mark.area));
-    card.appendChild(lineLabel({ id: "speaking", label: "Speaking practice" }));
-    check = el("span", "go", "✓");
-    check.setAttribute("aria-label", "Done");
-    card.appendChild(check);
-    return card;
-  }
-
-  function renderFocus(state) {
-    var host = document.getElementById("focus");
-    var card;
-    if (!host) return;
-    host.textContent = "";
-    host.removeAttribute("data-focus");
-    host.removeAttribute("data-speaking");
-    if (!state.connected) {
-      card = el("a", "focus-card");
-      card.href = "/journal/";
-      card.appendChild(el("span", "row-label", "Connect sync"));
-      card.appendChild(el("span", "go", "Go"));
-      host.appendChild(card);
-      host.setAttribute("data-focus", "connect");
-      return;
-    }
-    if (state.loading) {
-      host.appendChild(el("p", "sync-hint", "Checking today…"));
-      host.setAttribute("data-focus", "loading");
-      return;
-    }
-    if (state.note) host.appendChild(el("p", "sync-hint", state.note));
-    if (state.speakingDone) host.setAttribute("data-speaking", "done");
-    if (state.focus) {
-      var focusMark = rowVisual(state.focus);
-      var focusBadge;
-      var action = state.focus.done ? "✓" : "Go";
-      card = el("a", "focus-card");
-      card.href = state.focus.href;
-      if (focusMark && paletteArea(focusMark.area)) card.setAttribute("data-area", paletteArea(focusMark.area));
-      card.appendChild(lineLabel(state.focus));
-      if (!state.focus.done && state.focus.badge) {
-        focusBadge = el("span", "badge", state.focus.badge);
-        if (focusMark && paletteArea(focusMark.area)) focusBadge.setAttribute("data-area", paletteArea(focusMark.area));
-        card.appendChild(focusBadge);
-      }
-      card.appendChild(el("span", "go", action));
-      if (state.focus.done) card.setAttribute("data-speaking-card", "done");
-      host.appendChild(card);
-      host.setAttribute("data-focus", state.focus.id);
-      if (state.speakingDone && state.focus.id !== "speaking") host.appendChild(speakingDoneCard());
-      return;
-    }
-    if (state.speakingDone) host.appendChild(speakingDoneCard());
-    if (state.hideDone) {
-      host.setAttribute("data-focus", state.unknown ? "error" : "off");
-      return;
-    }
-    if (!state.unknown) {
-      host.appendChild(el("p", "focus-card focus-done", "All done today"));
-      host.setAttribute("data-focus", "done");
-      return;
-    }
-    if (!state.speakingDone) host.setAttribute("data-focus", "error");
-  }
-
   function lineLabel(row) {
     var text = row.label;
     var mark = rowVisual(row);
@@ -1511,14 +1442,12 @@
     var jobs;
     if (!cfg) {
       renderJournal(JOURNAL_CARD_EMPTY);
-      renderFocus({ connected: false });
       renderTiles(neutralTiles());
       renderWeather("");
       return;
     }
 
     renderJournal(JOURNAL_CARD_EMPTY);
-    renderFocus({ connected: true, loading: true });
     loadBriefWeather(cfg, today);
 
     root.GhSync.fetchJson(cfg, "crew-log").then(
@@ -1553,9 +1482,7 @@
 
     Promise.all(jobs).then(function (results) {
       var sources = { speakingMark: speakingMark };
-      var failed = [];
       var report;
-      var focus;
       results.forEach(function (result) {
         sources[result.key] = result.data;
         if (result.key === "speakingPublic") {
@@ -1575,19 +1502,9 @@
         if (result.key === "wiki") sources.wikiError = result.error;
         if (result.key === "chinese") sources.chineseError = result.error;
         if (result.key === "piano") sources.pianoError = result.error;
-        if (result.error) failed.push(result.key);
       });
       report = missingItems(sources, today, hour);
-      focus = focusItem(report.items, hour);
       renderJournal(sources.journalError ? JOURNAL_CARD_EMPTY : journalCardText(sources.journal, today));
-      renderFocus({
-        connected: true,
-        focus: focus,
-        speakingDone: report.speakingDone,
-        unknown: report.unknown,
-        hideDone: hideDoneCard(report.items, hour),
-        note: failed.length ? "Some logs could not be read." : "",
-      });
       renderTiles(tileCounts(sources, report, today));
     });
   }
