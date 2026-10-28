@@ -1,4 +1,5 @@
-// Renders the home with today-check data and asserts the missing sheet stays off.
+// Renders the home with today-check data. The missing sheet and the daily-goal
+// Go banner stay off. Pendentes and the Mandarin tile count stay.
 var assert = require("assert");
 
 function makeEl(tag) {
@@ -70,20 +71,32 @@ function lisbonToday() {
 }
 
 function mount() {
-  var ids = ["greet-hello", "today-date", "journal-card", "journal-line", "focus", "missions", "today-weather"];
+  var ids = ["greet-hello", "today-date", "journal-card", "journal-line", "missions", "today-weather"];
   var byId = {};
+  var mandarinCount = makeEl("span");
+  var mandarinTile = makeEl("a");
   ids.forEach(function (id) {
-    var node = makeEl(id === "focus" ? "section" : "div");
+    var node = makeEl("div");
     node.id = id;
     byId[id] = node;
   });
+  mandarinCount.className = "tile-count";
+  mandarinCount.textContent = "—";
+  mandarinTile.setAttribute("data-tile", "mandarin");
+  mandarinTile.appendChild(mandarinCount);
+  mandarinTile.querySelector = function (sel) {
+    return sel === ".tile-count" ? mandarinCount : null;
+  };
+  byId.mandarinTile = mandarinTile;
   global.document = {
     readyState: "complete",
     getElementById: function (id) { return byId[id] || null; },
     createElement: function (tag) { return makeEl(tag); },
     createTextNode: function (text) { return { nodeType: 3, textContent: String(text), children: [] }; },
     querySelector: function () { return null; },
-    querySelectorAll: function () { return []; },
+    querySelectorAll: function (sel) {
+      return sel === "[data-tile]" ? [mandarinTile] : [];
+    },
     addEventListener: function () {},
   };
   global.localStorage = {
@@ -137,18 +150,11 @@ function flush() {
 mount();
 flush().then(function () {
   var Hub = require("./hub.js");
-  var byId = {
-    focus: document.getElementById("focus"),
-    missions: document.getElementById("missions"),
-  };
-  var missions = byId.missions;
-  var focus = byId.focus;
+  var missions = document.getElementById("missions");
+  var mandarinTile = document.querySelectorAll("[data-tile]")[0];
   var classes = [];
   var sheetLabels = ["Journal", "Health", "Study", "Mandarin", "Practice", "Referee"];
   walk(missions, function (node) {
-    if (node.className) classes.push(node.className);
-  });
-  walk(focus, function (node) {
     if (node.className) classes.push(node.className);
   });
 
@@ -169,7 +175,6 @@ flush().then(function () {
 
   sheetLabels.forEach(function (area) {
     assert.strictEqual(missions.textContent.indexOf(area + " · "), -1, area);
-    assert.strictEqual(focus.textContent.indexOf(area + " · "), -1, area);
   });
 
   var todayLabels = [
@@ -182,15 +187,18 @@ flush().then(function () {
     "Mandarin cards",
     "Speaking practice",
     "Piano practice",
+    "All done today",
+    "Connect sync",
+    "Checking today",
   ];
   var shown = todayLabels.filter(function (label) {
-    return focus.textContent.indexOf(label) !== -1 || missions.textContent.indexOf(label) !== -1;
+    return missions.textContent.indexOf(label) !== -1;
   });
-  assert.ok(shown.length <= 1, "today-check rows on home: " + shown.join(", ") + " focus=" + focus.textContent);
-  todayLabels.forEach(function (label) {
-    assert.strictEqual(missions.textContent.indexOf(label), -1, label);
-  });
-  assert.ok(focus.textContent.indexOf("All done today") === -1);
+  assert.deepStrictEqual(shown, []);
+  assert.strictEqual(document.getElementById("focus"), null);
+  assert.strictEqual(classes.filter(function (name) { return name.indexOf("focus-card") !== -1 || name === "go"; }).length, 0);
+  assert.strictEqual(missions.textContent.indexOf("Go"), -1);
+  assert.ok(mandarinTile.textContent.indexOf("left") !== -1, mandarinTile.textContent);
   assert.strictEqual(Hub.missionHeadline([{ days: -1 }]), "Pendentes · 1 · overdue");
   console.log("hub.render.test.js: ok");
 }).catch(function (err) {
