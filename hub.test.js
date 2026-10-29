@@ -393,13 +393,15 @@ var hubSrc = fs.readFileSync(require("path").join(__dirname, "hub.js"), "utf8");
 });
 assert.strictEqual(html.indexOf("/summer-outfits-2026/"), -1);
 assert.strictEqual(html.indexOf("/gsi-study/"), -1);
-["study", "health", "career", "mandarin", "referee"].forEach(function (name) {
+["study", "health", "speaking", "mandarin", "referee"].forEach(function (name) {
   assert.ok(html.indexOf('data-tile="' + name + '"') !== -1, name);
 });
 assert.strictEqual(html.indexOf('data-tile="journal"'), -1);
+assert.strictEqual(html.indexOf('data-tile="career"'), -1);
 assert.ok(html.indexOf('data-tile="study" href="/wiki-flashcards/"') !== -1);
 assert.ok(html.indexOf('data-tile="health" href="/health/"') !== -1);
-assert.ok(html.indexOf('data-tile="career" href="/career/"') !== -1);
+assert.ok(html.indexOf('data-tile="speaking" href="https://dong-xuyong.github.io/speaking-analysis/"') !== -1);
+assert.strictEqual(html.indexOf('data-tile="career" href="/career/"'), -1);
 var detailTags = html.match(/<details\b[^>]*>/gi) || [];
 assert.ok(detailTags.length >= 1);
 detailTags.forEach(function (tag) {
@@ -418,7 +420,7 @@ assert.deepStrictEqual(tileOrder, [
   "wiki-insights",
   "study",
   "health",
-  "career",
+  "speaking",
   "mandarin",
   "referee",
 ]);
@@ -430,7 +432,13 @@ assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=23") !== -1);
+assert.ok(html.indexOf("styles.css?v=24") !== -1);
+var speakingTileAt = html.indexOf('data-tile="speaking"');
+var speakingTile = html.slice(speakingTileAt, html.indexOf("</a>", speakingTileAt));
+assert.ok(speakingTile.indexOf(">Speaking<") !== -1);
+assert.strictEqual(speakingTile.indexOf("Speaking Coach"), -1);
+assert.strictEqual(speakingTile.indexOf("tile-count"), -1);
+assert.ok(speakingTile.indexOf("assets/art/speaking.webp") !== -1);
 assert.ok(html.indexOf("hub.js?v=21") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/reps.json") !== -1);
 assert.ok(hubSrc.indexOf("https://dong-xuyong.github.io/speaking-analysis/data/index.json") !== -1);
