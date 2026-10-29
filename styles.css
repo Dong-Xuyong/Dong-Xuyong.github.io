@@ -8,6 +8,7 @@
   --area-mandarin: #E5484D;
   --area-referee: #14B8A6;
   --area-wiki-insights: #0EA5E9;
+  --area-speaking: #F24B86;
 
   --area-journal-ink: #855D20;
   --area-study-ink: #3F5BCB;
@@ -16,6 +17,7 @@
   --area-mandarin-ink: #B5393D;
   --area-referee-ink: #0C7267;
   --area-wiki-insights-ink: #096B97;
+  --area-speaking-ink: #B92A5C;
   --soon-ink: #c02626;
 }
 
@@ -27,6 +29,7 @@ html.dark {
   --area-mandarin-ink: #ED7F82;
   --area-referee-ink: #14B8A6;
   --area-wiki-insights-ink: #18A9EA;
+  --area-speaking-ink: #E87EA3;
   --soon-ink: #f87171;
 }
 
@@ -63,6 +66,11 @@ html.dark {
 [data-area="wiki-insights"] {
   --area: var(--area-wiki-insights);
   --area-ink: var(--area-wiki-insights-ink);
+}
+
+[data-area="speaking"] {
+  --area: var(--area-speaking);
+  --area-ink: var(--area-speaking-ink);
 }
 
 /* Full-page art. position:fixed on a pseudo-element, not
@@ -518,6 +526,11 @@ summary.is-soon::after {
 .tile[data-area] {
   border-color: var(--area-ink);
   background: color-mix(in srgb, var(--area) 10%, hsl(var(--card) / 0.94));
+}
+
+/* No session count, so the icon and label stay aligned with the counted tiles. */
+.tile[data-tile="speaking"] {
+  justify-content: flex-start;
 }
 
 .tile-art {
