@@ -10,6 +10,7 @@
   --area-wiki-insights: #0EA5E9;
   --area-speaking: #F24B86;
   --area-compass: #1D4ED8;
+  --area-skills: #8B5CF6;
 
   --area-journal-ink: #855D20;
   --area-study-ink: #3F5BCB;
@@ -20,6 +21,7 @@
   --area-wiki-insights-ink: #096B97;
   --area-speaking-ink: #B92A5C;
   --area-compass-ink: #2758E2;
+  --area-skills-ink: #724BCA;
   --soon-ink: #c02626;
 }
 
@@ -33,6 +35,7 @@ html.dark {
   --area-wiki-insights-ink: #18A9EA;
   --area-speaking-ink: #E87EA3;
   --area-compass-ink: #7F9CEE;
+  --area-skills-ink: #AE8DF9;
   --soon-ink: #f87171;
 }
 
@@ -79,6 +82,11 @@ html.dark {
 [data-area="compass"] {
   --area: var(--area-compass);
   --area-ink: var(--area-compass-ink);
+}
+
+[data-area="skills"] {
+  --area: var(--area-skills);
+  --area-ink: var(--area-skills-ink);
 }
 
 /* Full-page art. position:fixed on a pseudo-element, not

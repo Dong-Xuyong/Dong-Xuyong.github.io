@@ -381,6 +381,7 @@ var hubSrc = fs.readFileSync(require("path").join(__dirname, "hub.js"), "utf8");
   "/piano/",
   "/thesis/",
   "/compass/",
+  "/skills/",
   "/money/",
   "/crew-log/",
   "/referee-games/",
@@ -394,7 +395,7 @@ var hubSrc = fs.readFileSync(require("path").join(__dirname, "hub.js"), "utf8");
 });
 assert.strictEqual(html.indexOf("/summer-outfits-2026/"), -1);
 assert.strictEqual(html.indexOf("/gsi-study/"), -1);
-["study", "health", "speaking", "mandarin", "referee", "compass"].forEach(function (name) {
+["study", "health", "speaking", "mandarin", "referee", "compass", "skills"].forEach(function (name) {
   assert.ok(html.indexOf('data-tile="' + name + '"') !== -1, name);
 });
 assert.strictEqual(html.indexOf('data-tile="journal"'), -1);
@@ -425,19 +426,23 @@ assert.deepStrictEqual(tileOrder, [
   "mandarin",
   "referee",
   "compass",
+  "skills",
 ]);
 assert.ok(tileOrder.indexOf("wiki-insights") <= 1);
 assert.ok(html.indexOf('data-tile="wiki-insights" href="/wiki-flashcards/insights/"') !== -1);
 assert.ok(html.indexOf('data-tile="compass" href="/compass/"') !== -1);
 assert.ok(html.indexOf("assets/art/compass.webp") !== -1);
 assert.ok(html.indexOf('href="/compass/"><span class="row-emoji" aria-hidden="true">🧭</span>Compass</a>') !== -1);
+assert.ok(html.indexOf('data-tile="skills" href="/skills/"') !== -1);
+assert.ok(html.indexOf("assets/art/skills.webp") !== -1);
+assert.ok(html.indexOf('href="/skills/"><span class="row-emoji" aria-hidden="true">🎯</span>Skills</a>') !== -1);
 assert.ok(html.indexOf("assets/art/banner.webp") !== -1);
 assert.ok(html.indexOf("assets/art/wiki-insights.webp") !== -1);
 assert.ok(html.indexOf("assets/art/journal.webp") !== -1);
 assert.ok(html.indexOf('width="52"') !== -1);
 assert.ok(html.indexOf('height="52"') !== -1);
 assert.ok(html.indexOf('loading="lazy"') !== -1);
-assert.ok(html.indexOf("styles.css?v=25") !== -1);
+assert.ok(html.indexOf("styles.css?v=26") !== -1);
 var speakingTileAt = html.indexOf('data-tile="speaking"');
 var speakingTile = html.slice(speakingTileAt, html.indexOf("</a>", speakingTileAt));
 assert.ok(speakingTile.indexOf(">Speaking<") !== -1);
